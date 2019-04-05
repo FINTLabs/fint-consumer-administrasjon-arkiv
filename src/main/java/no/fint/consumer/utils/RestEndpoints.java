@@ -4,11 +4,8 @@ public enum RestEndpoints {
     ;
 
     public static final String ADMIN = "/admin";
-	public static final String DOKUMENTBESKRIVELSE = "/dokumentbeskrivelse";
-	public static final String DOKUMENTOBJEKT = "/dokumentobjekt";
 	public static final String DOKUMENTSTATUS = "/dokumentstatus";
 	public static final String DOKUMENTTYPE = "/dokumenttype";
-	public static final String JOURNALPOST = "/journalpost";
 	public static final String JOURNALPOSTTYPE = "/journalposttype";
 	public static final String JOURNALSTATUS = "/journalstatus";
 	public static final String KORRESPONDANSEPART = "/korrespondansepart";

@@ -54,20 +54,6 @@ spec:
             - {name: fint.hazelcast.kubernetes.labelValue, value: administrasjon-arkiv}
             - {name: fint.relations.default-base-url, value: 'https://beta.felleskomponent.no'}
             - {name: server.context-path, value: /administrasjon/arkiv}
-            - {name: fint.consumer.cache.disabled.dokumentbeskrivelse, value: 'true'}
-            - {name: fint.consumer.cache.disabled.dokumentobjekt, value: 'true'}
-            - {name: fint.consumer.cache.disabled.dokumentstatus, value: 'true'}
-            - {name: fint.consumer.cache.disabled.dokumenttype, value: 'true'}
-            - {name: fint.consumer.cache.disabled.journalpost, value: 'true'}
-            - {name: fint.consumer.cache.disabled.journalposttype, value: 'true'}
-            - {name: fint.consumer.cache.disabled.journalstatus, value: 'true'}
-            - {name: fint.consumer.cache.disabled.korrespondansepart, value: 'true'}
-            - {name: fint.consumer.cache.disabled.korrespondanseparttype, value: 'true'}
-            - {name: fint.consumer.cache.disabled.sakspart, value: 'true'}
-            - {name: fint.consumer.cache.disabled.sakspartrolle, value: 'true'}
-            - {name: fint.consumer.cache.disabled.saksstatus, value: 'true'}
-            - {name: fint.consumer.cache.disabled.tilknyttetregistreringsom, value: 'true'}
-            - {name: fint.consumer.cache.disabled.variantformat, value: 'true'}
           image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.2
           name: consumer-administrasjon-arkiv
           ports:

@@ -10,11 +10,8 @@ public class LinkMapper {
 
 	public static Map<String, String> linkMapper(String contextPath) {
 		return ImmutableMap.<String,String>builder()
-			.put(Dokumentbeskrivelse.class.getName(), contextPath + RestEndpoints.DOKUMENTBESKRIVELSE)
-			.put(Dokumentobjekt.class.getName(), contextPath + RestEndpoints.DOKUMENTOBJEKT)
 			.put(DokumentStatus.class.getName(), contextPath + RestEndpoints.DOKUMENTSTATUS)
 			.put(DokumentType.class.getName(), contextPath + RestEndpoints.DOKUMENTTYPE)
-			.put(Journalpost.class.getName(), contextPath + RestEndpoints.JOURNALPOST)
 			.put(JournalpostType.class.getName(), contextPath + RestEndpoints.JOURNALPOSTTYPE)
 			.put(JournalStatus.class.getName(), contextPath + RestEndpoints.JOURNALSTATUS)
 			.put(Korrespondansepart.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPART)
