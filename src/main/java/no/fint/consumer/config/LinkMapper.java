@@ -1,10 +1,11 @@
 package no.fint.consumer.config;
 
-import com.google.common.collect.ImmutableMap;
 import no.fint.consumer.utils.RestEndpoints;
-import no.fint.model.administrasjon.arkiv.*;
-
 import java.util.Map;
+import com.google.common.collect.ImmutableMap;
+
+import no.fint.model.administrasjon.arkiv.*;
+import no.fint.model.felles.*;
 
 public class LinkMapper {
 
@@ -16,6 +17,7 @@ public class LinkMapper {
 			.put(JournalStatus.class.getName(), contextPath + RestEndpoints.JOURNALSTATUS)
 			.put(Korrespondansepart.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPART)
 			.put(KorrespondansepartType.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPARTTYPE)
+			.put(Sak.class.getName(), contextPath + RestEndpoints.SAK)
 			.put(Sakspart.class.getName(), contextPath + RestEndpoints.SAKSPART)
 			.put(SakspartRolle.class.getName(), contextPath + RestEndpoints.SAKSPARTROLLE)
 			.put(Saksstatus.class.getName(), contextPath + RestEndpoints.SAKSSTATUS)
