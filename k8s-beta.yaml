@@ -47,6 +47,7 @@ spec:
               valueFrom:
                 secretKeyRef: {key: mongodb, name: fint-audit}
             - {name: fint.cache.manager, value: default}
+            - {name: fint.consumer.cache.disabled.sak, value: 'true'}
             - {name: fint.events.orgIds, value: health.fintlabs.no}
             - {name: fint.hazelcast.kubernetes.enabled, value: 'true'}
             - {name: fint.hazelcast.kubernetes.namespace, value: default}
@@ -54,7 +55,7 @@ spec:
             - {name: fint.hazelcast.kubernetes.labelValue, value: administrasjon-arkiv}
             - {name: fint.relations.default-base-url, value: 'https://beta.felleskomponent.no'}
             - {name: server.context-path, value: /administrasjon/arkiv}
-          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.10
+          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.12
           name: consumer-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
