@@ -14,6 +14,7 @@ import no.fint.consumer.event.ConsumerEventUtil;
 import no.fint.consumer.event.SynchronousEvents;
 import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
+import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
 
 import no.fint.event.model.*;
@@ -74,7 +75,7 @@ public class DokumentTypeController {
     @GetMapping("/last-updated")
     public Map<String, String> getLastUpdated(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new BadRequestException("Cache is disabled");
+            throw new CacheDisabledException("DokumentType cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -86,7 +87,7 @@ public class DokumentTypeController {
     @GetMapping("/cache/size")
      public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new BadRequestException("Cache is disabled");
+            throw new CacheDisabledException("DokumentType cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -97,7 +98,7 @@ public class DokumentTypeController {
     @PostMapping("/cache/rebuild")
     public void rebuildCache(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new BadRequestException("Cache is disabled");
+            throw new CacheDisabledException("DokumentType cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -111,7 +112,7 @@ public class DokumentTypeController {
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             @RequestParam(required = false) Long sinceTimeStamp) {
         if (cacheService == null) {
-            throw new BadRequestException("Cache is disabled");
+            throw new CacheDisabledException("DokumentType cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -149,10 +150,10 @@ public class DokumentTypeController {
         if (client == null) {
             client = props.getDefaultClient();
         }
-        log.debug("SystemId: {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_DOKUMENTTYPE, client);
-        event.setQuery("systemid/" + id);
+        event.setQuery("systemId/" + id);
 
         if (cacheService != null) {
             fintAuditService.audit(event);
@@ -168,15 +169,14 @@ public class DokumentTypeController {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
             consumerEventUtil.send(event);
 
-            Event response = queue.poll(5, TimeUnit.MINUTES);
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
 
-            if (response == null ||
-                    response.getData() == null ||
+            if (response.getData() == null ||
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
             DokumentTypeResource dokumenttype = objectMapper.convertValue(response.getData().get(0), DokumentTypeResource.class);
 
-            fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+            fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(dokumenttype);
         }    
@@ -188,6 +188,11 @@ public class DokumentTypeController {
     //
     // Exception handlers
     //
+    @ExceptionHandler(EventResponseException.class)
+    public ResponseEntity handleEventResponseException(EventResponseException e) {
+        return ResponseEntity.status(e.getStatus()).body(e.getResponse());
+    }
+
     @ExceptionHandler(UpdateEntityMismatchException.class)
     public ResponseEntity handleUpdateEntityMismatch(Exception e) {
         return ResponseEntity.badRequest().body(ErrorResponse.of(e));
@@ -208,9 +213,9 @@ public class DokumentTypeController {
         return ResponseEntity.status(HttpStatus.FOUND).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler(BadRequestException.class)
+    @ExceptionHandler(CacheDisabledException.class)
     public ResponseEntity handleBadRequest(Exception e) {
-        return ResponseEntity.badRequest().body(ErrorResponse.of(e));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ErrorResponse.of(e));
     }
 
     @ExceptionHandler(UnknownHostException.class)

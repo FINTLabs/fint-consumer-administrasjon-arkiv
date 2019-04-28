@@ -36,6 +36,9 @@ public class SakLinker extends FintLinker<SakResource> {
         if (!isNull(sak.getMappeId()) && !isEmpty(sak.getMappeId().getIdentifikatorverdi())) {
             return createHrefWithId(sak.getMappeId().getIdentifikatorverdi(), "mappeid");
         }
+        if (!isNull(sak.getSystemId()) && !isEmpty(sak.getSystemId().getIdentifikatorverdi())) {
+            return createHrefWithId(sak.getSystemId().getIdentifikatorverdi(), "systemid");
+        }
         
         return null;
     }

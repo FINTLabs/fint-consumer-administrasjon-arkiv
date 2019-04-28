@@ -93,6 +93,15 @@ public class SakCacheService extends CacheService<SakResource> {
                 .orElse(false));
     }
 
+    public Optional<SakResource> getSakBySystemId(String orgId, String systemId) {
+        return getOne(orgId, (resource) -> Optional
+                .ofNullable(resource)
+                .map(SakResource::getSystemId)
+                .map(Identifikator::getIdentifikatorverdi)
+                .map(_id -> _id.equals(systemId))
+                .orElse(false));
+    }
+
 
 	@Override
     public void onAction(Event event) {
