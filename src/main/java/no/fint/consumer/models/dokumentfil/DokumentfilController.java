@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
-
 import no.fint.audit.FintAuditService;
-
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -16,31 +14,28 @@ import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
-
 import no.fint.event.model.*;
-
+import no.fint.model.administrasjon.arkiv.ArkivActions;
+import no.fint.model.resource.administrasjon.arkiv.DokumentfilResource;
+import no.fint.model.resource.administrasjon.arkiv.DokumentfilResources;
 import no.fint.relations.FintRelationsMediaType;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
-import java.net.URI;
-
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import no.fint.model.resource.administrasjon.arkiv.DokumentfilResource;
-import no.fint.model.resource.administrasjon.arkiv.DokumentfilResources;
-import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
 @Api(tags = {"Dokumentfil"})
@@ -176,12 +171,11 @@ public class DokumentfilController {
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
             DokumentfilResource dokumentfil = objectMapper.convertValue(response.getData().get(0), DokumentfilResource.class);
-            URI location = new URI(dokumentfil.getData());
-
+            byte[] decoded = Base64.getDecoder().decode(dokumentfil.getData());
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             //return linker.toResource(dokumentfil);
-            return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
+            return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/pdf").body(decoded);
         }    
     }
 
