@@ -4,6 +4,7 @@ public enum RestEndpoints {
     ;
 
     public static final String ADMIN = "/admin";
+	public static final String DOKUMENTFIL = "/dokumentfil";
 	public static final String DOKUMENTSTATUS = "/dokumentstatus";
 	public static final String DOKUMENTTYPE = "/dokumenttype";
 	public static final String JOURNALPOSTTYPE = "/journalposttype";

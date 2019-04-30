@@ -11,6 +11,7 @@ public class LinkMapper {
 
 	public static Map<String, String> linkMapper(String contextPath) {
 		return ImmutableMap.<String,String>builder()
+			.put(Dokumentfil.class.getName(), contextPath + RestEndpoints.DOKUMENTFIL)
 			.put(DokumentStatus.class.getName(), contextPath + RestEndpoints.DOKUMENTSTATUS)
 			.put(DokumentType.class.getName(), contextPath + RestEndpoints.DOKUMENTTYPE)
 			.put(JournalpostType.class.getName(), contextPath + RestEndpoints.JOURNALPOSTTYPE)
