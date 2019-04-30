@@ -169,7 +169,7 @@ public class DokumentfilController {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
             consumerEventUtil.send(event);
 
-            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+            Event response = EventResponses.handle(queue.poll(100, TimeUnit.SECONDS));
 
             if (response.getData() == null ||
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
