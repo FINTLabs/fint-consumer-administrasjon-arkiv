@@ -28,6 +28,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.net.URI;
 
@@ -140,10 +141,10 @@ public class DokumentfilController {
 
 
     @GetMapping("/systemid/{id:.+}")
-    public DokumentfilResource getDokumentfilBySystemId(
+    public ResponseEntity getDokumentfilBySystemId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
-            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
+            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException, URISyntaxException {
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
         }
@@ -163,7 +164,7 @@ public class DokumentfilController {
 
             fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-            return dokumentfil.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+            return ResponseEntity.ok(dokumentfil.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id)));
 
         } else {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
@@ -175,10 +176,12 @@ public class DokumentfilController {
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
             DokumentfilResource dokumentfil = objectMapper.convertValue(response.getData().get(0), DokumentfilResource.class);
+            URI location = new URI(dokumentfil.getData());
 
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
-            return linker.toResource(dokumentfil);
+            //return linker.toResource(dokumentfil);
+            return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
         }    
     }
 
