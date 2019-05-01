@@ -9,7 +9,6 @@ public enum RestEndpoints {
 	public static final String DOKUMENTTYPE = "/dokumenttype";
 	public static final String JOURNALPOSTTYPE = "/journalposttype";
 	public static final String JOURNALSTATUS = "/journalstatus";
-	public static final String KORRESPONDANSEPART = "/korrespondansepart";
 	public static final String KORRESPONDANSEPARTTYPE = "/korrespondanseparttype";
 	public static final String SAK = "/sak";
 	public static final String SAKSPART = "/sakspart";
