@@ -175,7 +175,7 @@ public class DokumentfilController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             //return linker.toResource(dokumentfil);
-            return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, "application/pdf").body(decoded);
+            return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, dokumentfil.getFormat()).body(decoded);
         }    
     }
 
