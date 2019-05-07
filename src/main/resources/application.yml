@@ -6,5 +6,6 @@ fint:
   consumer:
     cache:
       disabled:
+        sakspart: true
         korrespondansepart: true
         dokumentfil: true
