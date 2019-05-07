@@ -16,6 +16,7 @@ import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
 import no.fint.event.model.*;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
+import no.fint.model.felles.kompleksedatatyper.Identifikator;
 import no.fint.model.resource.administrasjon.arkiv.DokumentfilResource;
 import no.fint.model.resource.administrasjon.arkiv.DokumentfilResources;
 import no.fint.relations.FintRelationsMediaType;
@@ -81,7 +82,7 @@ public class DokumentfilController {
     }
 
     @GetMapping("/cache/size")
-     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Dokumentfil cache is disabled.");
         }
@@ -176,9 +177,8 @@ public class DokumentfilController {
 
             //return linker.toResource(dokumentfil);
             return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, dokumentfil.getFormat()).body(decoded);
-        }    
+        }
     }
-
 
 
     @GetMapping("/status/{id}")
@@ -194,7 +194,11 @@ public class DokumentfilController {
         log.debug("Event: {}", event);
         log.trace("Data: {}", event.getData());
         if (!event.getOrgId().equals(orgId)) {
-            return ResponseEntity.badRequest().body(new EventResponse() { { setMessage("Invalid OrgId"); } } );
+            return ResponseEntity.badRequest().body(new EventResponse() {
+                {
+                    setMessage("Invalid OrgId");
+                }
+            });
         }
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
@@ -238,6 +242,9 @@ public class DokumentfilController {
         dokument.setFormat(format);
         linker.mapLinks(dokument);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_DOKUMENTFIL, client);
+        dokument.setSystemId(new Identifikator() {{
+            setIdentifikatorverdi(event.getCorrId());
+        }});
         event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(dokument, Map.class));
         event.setOperation(Operation.CREATE);
         consumerEventUtil.send(event);
@@ -248,7 +255,7 @@ public class DokumentfilController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
 
-  
+
     @PutMapping("/systemid/{id:.+}")
     public ResponseEntity putDokumentfilBySystemId(
             @PathVariable String id,
@@ -272,7 +279,7 @@ public class DokumentfilController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
 
     //
     // Exception handlers
