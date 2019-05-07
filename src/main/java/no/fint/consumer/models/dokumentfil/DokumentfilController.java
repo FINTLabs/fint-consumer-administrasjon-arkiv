@@ -229,19 +229,17 @@ public class DokumentfilController {
     public ResponseEntity postDokumentfil(
             @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT) String client,
-            @RequestBody DokumentfilResource body,
-            @RequestParam(name = "validate", required = false) boolean validate
+            @RequestHeader(name = HttpHeaders.CONTENT_TYPE) String format,
+            @RequestBody byte[] body
     ) {
-        log.debug("postDokumentfil, Validate: {}, OrgId: {}, Client: {}", validate, orgId, client);
-        log.trace("Body: {}", body);
-        linker.mapLinks(body);
+        log.debug("postDokumentfil, OrgId: {}, Client: {}", orgId, client);
+        DokumentfilResource dokument = new DokumentfilResource();
+        dokument.setData(Base64.getEncoder().encodeToString(body));
+        dokument.setFormat(format);
+        linker.mapLinks(dokument);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_DOKUMENTFIL, client);
-        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(dokument, Map.class));
         event.setOperation(Operation.CREATE);
-        if (validate) {
-            event.setQuery("VALIDATE");
-            event.setOperation(Operation.VALIDATE);
-        }
         consumerEventUtil.send(event);
 
         statusCache.put(event.getCorrId(), event);
