@@ -1,4 +1,4 @@
-package no.fint.consumer.models.sakspartrolle;
+package no.fint.consumer.models.partrolle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -37,25 +37,25 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import no.fint.model.resource.administrasjon.arkiv.SakspartRolleResource;
-import no.fint.model.resource.administrasjon.arkiv.SakspartRolleResources;
+import no.fint.model.resource.administrasjon.arkiv.PartRolleResource;
+import no.fint.model.resource.administrasjon.arkiv.PartRolleResources;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
-@Api(tags = {"SakspartRolle"})
+@Api(tags = {"PartRolle"})
 @CrossOrigin
 @RestController
-@RequestMapping(name = "SakspartRolle", value = RestEndpoints.SAKSPARTROLLE, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
-public class SakspartRolleController {
+@RequestMapping(name = "PartRolle", value = RestEndpoints.PARTROLLE, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+public class PartRolleController {
 
     @Autowired(required = false)
-    private SakspartRolleCacheService cacheService;
+    private PartRolleCacheService cacheService;
 
     @Autowired
     private FintAuditService fintAuditService;
 
     @Autowired
-    private SakspartRolleLinker linker;
+    private PartRolleLinker linker;
 
     @Autowired
     private ConsumerProps props;
@@ -75,7 +75,7 @@ public class SakspartRolleController {
     @GetMapping("/last-updated")
     public Map<String, String> getLastUpdated(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("SakspartRolle cache is disabled.");
+            throw new CacheDisabledException("PartRolle cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -87,7 +87,7 @@ public class SakspartRolleController {
     @GetMapping("/cache/size")
      public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("SakspartRolle cache is disabled.");
+            throw new CacheDisabledException("PartRolle cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -98,7 +98,7 @@ public class SakspartRolleController {
     @PostMapping("/cache/rebuild")
     public void rebuildCache(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("SakspartRolle cache is disabled.");
+            throw new CacheDisabledException("PartRolle cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -107,12 +107,12 @@ public class SakspartRolleController {
     }
 
     @GetMapping
-    public SakspartRolleResources getSakspartRolle(
+    public PartRolleResources getPartRolle(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             @RequestParam(required = false) Long sinceTimeStamp) {
         if (cacheService == null) {
-            throw new CacheDisabledException("SakspartRolle cache is disabled.");
+            throw new CacheDisabledException("PartRolle cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -122,25 +122,25 @@ public class SakspartRolleController {
         }
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAKSPARTROLLE, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PARTROLLE, client);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
-        List<SakspartRolleResource> sakspartrolle;
+        List<PartRolleResource> partrolle;
         if (sinceTimeStamp == null) {
-            sakspartrolle = cacheService.getAll(orgId);
+            partrolle = cacheService.getAll(orgId);
         } else {
-            sakspartrolle = cacheService.getAll(orgId, sinceTimeStamp);
+            partrolle = cacheService.getAll(orgId, sinceTimeStamp);
         }
 
         fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-        return linker.toResources(sakspartrolle);
+        return linker.toResources(partrolle);
     }
 
 
     @GetMapping("/systemid/{id:.+}")
-    public SakspartRolleResource getSakspartRolleBySystemId(
+    public PartRolleResource getPartRolleBySystemId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
@@ -152,18 +152,18 @@ public class SakspartRolleController {
         }
         log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_SAKSPARTROLLE, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_PARTROLLE, client);
         event.setQuery("systemId/" + id);
 
         if (cacheService != null) {
             fintAuditService.audit(event);
             fintAuditService.audit(event, Status.CACHE);
 
-            Optional<SakspartRolleResource> sakspartrolle = cacheService.getSakspartRolleBySystemId(orgId, id);
+            Optional<PartRolleResource> partrolle = cacheService.getPartRolleBySystemId(orgId, id);
 
             fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-            return sakspartrolle.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+            return partrolle.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
 
         } else {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
@@ -174,11 +174,11 @@ public class SakspartRolleController {
             if (response.getData() == null ||
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
-            SakspartRolleResource sakspartrolle = objectMapper.convertValue(response.getData().get(0), SakspartRolleResource.class);
+            PartRolleResource partrolle = objectMapper.convertValue(response.getData().get(0), PartRolleResource.class);
 
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
-            return linker.toResource(sakspartrolle);
+            return linker.toResource(partrolle);
         }    
     }
 

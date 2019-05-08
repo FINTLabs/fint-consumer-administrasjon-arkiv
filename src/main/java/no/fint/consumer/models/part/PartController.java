@@ -1,4 +1,4 @@
-package no.fint.consumer.models.sakspart;
+package no.fint.consumer.models.part;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -37,25 +37,25 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import no.fint.model.resource.administrasjon.arkiv.SakspartResource;
-import no.fint.model.resource.administrasjon.arkiv.SakspartResources;
+import no.fint.model.resource.administrasjon.arkiv.PartResource;
+import no.fint.model.resource.administrasjon.arkiv.PartResources;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
-@Api(tags = {"Sakspart"})
+@Api(tags = {"Part"})
 @CrossOrigin
 @RestController
-@RequestMapping(name = "Sakspart", value = RestEndpoints.SAKSPART, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
-public class SakspartController {
+@RequestMapping(name = "Part", value = RestEndpoints.PART, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+public class PartController {
 
     @Autowired(required = false)
-    private SakspartCacheService cacheService;
+    private PartCacheService cacheService;
 
     @Autowired
     private FintAuditService fintAuditService;
 
     @Autowired
-    private SakspartLinker linker;
+    private PartLinker linker;
 
     @Autowired
     private ConsumerProps props;
@@ -75,7 +75,7 @@ public class SakspartController {
     @GetMapping("/last-updated")
     public Map<String, String> getLastUpdated(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("Sakspart cache is disabled.");
+            throw new CacheDisabledException("Part cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -87,7 +87,7 @@ public class SakspartController {
     @GetMapping("/cache/size")
      public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("Sakspart cache is disabled.");
+            throw new CacheDisabledException("Part cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -98,7 +98,7 @@ public class SakspartController {
     @PostMapping("/cache/rebuild")
     public void rebuildCache(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("Sakspart cache is disabled.");
+            throw new CacheDisabledException("Part cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -107,12 +107,12 @@ public class SakspartController {
     }
 
     @GetMapping
-    public SakspartResources getSakspart(
+    public PartResources getPart(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             @RequestParam(required = false) Long sinceTimeStamp) {
         if (cacheService == null) {
-            throw new CacheDisabledException("Sakspart cache is disabled.");
+            throw new CacheDisabledException("Part cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -122,25 +122,25 @@ public class SakspartController {
         }
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAKSPART, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PART, client);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
-        List<SakspartResource> sakspart;
+        List<PartResource> part;
         if (sinceTimeStamp == null) {
-            sakspart = cacheService.getAll(orgId);
+            part = cacheService.getAll(orgId);
         } else {
-            sakspart = cacheService.getAll(orgId, sinceTimeStamp);
+            part = cacheService.getAll(orgId, sinceTimeStamp);
         }
 
         fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-        return linker.toResources(sakspart);
+        return linker.toResources(part);
     }
 
 
-    @GetMapping("/sakspartid/{id:.+}")
-    public SakspartResource getSakspartBySakspartId(
+    @GetMapping("/partid/{id:.+}")
+    public PartResource getPartByPartId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
@@ -150,20 +150,20 @@ public class SakspartController {
         if (client == null) {
             client = props.getDefaultClient();
         }
-        log.debug("sakspartId: {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.debug("partId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_SAKSPART, client);
-        event.setQuery("sakspartId/" + id);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_PART, client);
+        event.setQuery("partId/" + id);
 
         if (cacheService != null) {
             fintAuditService.audit(event);
             fintAuditService.audit(event, Status.CACHE);
 
-            Optional<SakspartResource> sakspart = cacheService.getSakspartBySakspartId(orgId, id);
+            Optional<PartResource> part = cacheService.getPartByPartId(orgId, id);
 
             fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-            return sakspart.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+            return part.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
 
         } else {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
@@ -174,11 +174,11 @@ public class SakspartController {
             if (response.getData() == null ||
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
-            SakspartResource sakspart = objectMapper.convertValue(response.getData().get(0), SakspartResource.class);
+            PartResource part = objectMapper.convertValue(response.getData().get(0), PartResource.class);
 
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
-            return linker.toResource(sakspart);
+            return linker.toResource(part);
         }    
     }
 
@@ -202,14 +202,14 @@ public class SakspartController {
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
         }
-        List<SakspartResource> result;
+        List<PartResource> result;
         switch (event.getResponseStatus()) {
             case ACCEPTED:
                 if (event.getOperation() == Operation.VALIDATE) {
                     fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                     return ResponseEntity.ok(event.getResponse());
                 }
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, SakspartResource.class));
+                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, PartResource.class));
                 URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result.get(0))).build().toUri();
                 event.setMessage(location.toString());
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
@@ -219,7 +219,7 @@ public class SakspartController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(event.getResponse());
             case CONFLICT:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, SakspartResource.class));
+                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, PartResource.class));
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResources(result));
             case REJECTED:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
@@ -229,16 +229,16 @@ public class SakspartController {
     }
 
     @PostMapping
-    public ResponseEntity postSakspart(
+    public ResponseEntity postPart(
             @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT) String client,
-            @RequestBody SakspartResource body,
+            @RequestBody PartResource body,
             @RequestParam(name = "validate", required = false) boolean validate
     ) {
-        log.debug("postSakspart, Validate: {}, OrgId: {}, Client: {}", validate, orgId, client);
+        log.debug("postPart, Validate: {}, OrgId: {}, Client: {}", validate, orgId, client);
         log.trace("Body: {}", body);
         linker.mapLinks(body);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_SAKSPART, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_PART, client);
         event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
         event.setOperation(Operation.CREATE);
         if (validate) {
@@ -254,18 +254,18 @@ public class SakspartController {
     }
 
   
-    @PutMapping("/sakspartid/{id:.+}")
-    public ResponseEntity putSakspartBySakspartId(
+    @PutMapping("/partid/{id:.+}")
+    public ResponseEntity putPartByPartId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT) String client,
-            @RequestBody SakspartResource body
+            @RequestBody PartResource body
     ) {
-        log.debug("putSakspartBySakspartId {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.debug("putPartByPartId {}, OrgId: {}, Client: {}", id, orgId, client);
         log.trace("Body: {}", body);
         linker.mapLinks(body);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_SAKSPART, client);
-        event.setQuery("sakspartid/" + id);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_PART, client);
+        event.setQuery("partid/" + id);
         event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
         event.setOperation(Operation.UPDATE);
         fintAuditService.audit(event);

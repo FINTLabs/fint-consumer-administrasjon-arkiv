@@ -1,4 +1,4 @@
-package no.fint.consumer.models.sakspartrolle;
+package no.fint.consumer.models.partrolle;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,16 +25,16 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 
-import no.fint.model.administrasjon.arkiv.SakspartRolle;
-import no.fint.model.resource.administrasjon.arkiv.SakspartRolleResource;
+import no.fint.model.administrasjon.arkiv.PartRolle;
+import no.fint.model.resource.administrasjon.arkiv.PartRolleResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.sakspartrolle", havingValue = "false", matchIfMissing = true)
-public class SakspartRolleCacheService extends CacheService<SakspartRolleResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.partrolle", havingValue = "false", matchIfMissing = true)
+public class PartRolleCacheService extends CacheService<PartRolleResource> {
 
-    public static final String MODEL = SakspartRolle.class.getSimpleName().toLowerCase();
+    public static final String MODEL = PartRolle.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -49,16 +49,16 @@ public class SakspartRolleCacheService extends CacheService<SakspartRolleResourc
     private ConsumerProps props;
 
     @Autowired
-    private SakspartRolleLinker linker;
+    private PartRolleLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public SakspartRolleCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_SAKSPARTROLLE, ArkivActions.UPDATE_SAKSPARTROLLE);
+    public PartRolleCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_PARTROLLE, ArkivActions.UPDATE_PARTROLLE);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, SakspartRolleResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, PartRolleResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -67,7 +67,7 @@ public class SakspartRolleCacheService extends CacheService<SakspartRolleResourc
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_SAKSPARTROLLE, fixedRateString = Constants.CACHE_FIXEDRATE_SAKSPARTROLLE)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_PARTROLLE, fixedRateString = Constants.CACHE_FIXEDRATE_PARTROLLE)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -78,16 +78,16 @@ public class SakspartRolleCacheService extends CacheService<SakspartRolleResourc
 	}
 
     private void populateCache(String orgId) {
-		log.info("Populating SakspartRolle cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAKSPARTROLLE, Constants.CACHE_SERVICE);
+		log.info("Populating PartRolle cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PARTROLLE, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<SakspartRolleResource> getSakspartRolleBySystemId(String orgId, String systemId) {
+    public Optional<PartRolleResource> getPartRolleBySystemId(String orgId, String systemId) {
         return getOne(orgId, (resource) -> Optional
                 .ofNullable(resource)
-                .map(SakspartRolleResource::getSystemId)
+                .map(PartRolleResource::getSystemId)
                 .map(Identifikator::getIdentifikatorverdi)
                 .map(_id -> _id.equals(systemId))
                 .orElse(false));
@@ -96,15 +96,15 @@ public class SakspartRolleCacheService extends CacheService<SakspartRolleResourc
 
 	@Override
     public void onAction(Event event) {
-        List<SakspartRolleResource> data;
+        List<PartRolleResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<SakspartRolleResource> to SakspartRolleResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), SakspartRolleResource.class);
+            log.info("Compatibility: Converting FintResource<PartRolleResource> to PartRolleResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), PartRolleResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_SAKSPARTROLLE) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_PARTROLLE) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
                 add(event.getOrgId(), data);
                 log.info("Added {} elements to cache for {}", data.size(), event.getOrgId());

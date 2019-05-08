@@ -11,9 +11,9 @@ public enum RestEndpoints {
 	public static final String JOURNALSTATUS = "/journalstatus";
 	public static final String KORRESPONDANSEPART = "/korrespondansepart";
 	public static final String KORRESPONDANSEPARTTYPE = "/korrespondanseparttype";
+	public static final String PART = "/part";
+	public static final String PARTROLLE = "/partrolle";
 	public static final String SAK = "/sak";
-	public static final String SAKSPART = "/sakspart";
-	public static final String SAKSPARTROLLE = "/sakspartrolle";
 	public static final String SAKSSTATUS = "/saksstatus";
 	public static final String TILKNYTTETREGISTRERINGSOM = "/tilknyttetregistreringsom";
 	public static final String VARIANTFORMAT = "/variantformat";

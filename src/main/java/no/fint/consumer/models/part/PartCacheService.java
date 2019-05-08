@@ -1,4 +1,4 @@
-package no.fint.consumer.models.sakspart;
+package no.fint.consumer.models.part;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,16 +25,16 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 
-import no.fint.model.administrasjon.arkiv.Sakspart;
-import no.fint.model.resource.administrasjon.arkiv.SakspartResource;
+import no.fint.model.administrasjon.arkiv.Part;
+import no.fint.model.resource.administrasjon.arkiv.PartResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.sakspart", havingValue = "false", matchIfMissing = true)
-public class SakspartCacheService extends CacheService<SakspartResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.part", havingValue = "false", matchIfMissing = true)
+public class PartCacheService extends CacheService<PartResource> {
 
-    public static final String MODEL = Sakspart.class.getSimpleName().toLowerCase();
+    public static final String MODEL = Part.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -49,16 +49,16 @@ public class SakspartCacheService extends CacheService<SakspartResource> {
     private ConsumerProps props;
 
     @Autowired
-    private SakspartLinker linker;
+    private PartLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public SakspartCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_SAKSPART, ArkivActions.UPDATE_SAKSPART);
+    public PartCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_PART, ArkivActions.UPDATE_PART);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, SakspartResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, PartResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -67,7 +67,7 @@ public class SakspartCacheService extends CacheService<SakspartResource> {
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_SAKSPART, fixedRateString = Constants.CACHE_FIXEDRATE_SAKSPART)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_PART, fixedRateString = Constants.CACHE_FIXEDRATE_PART)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -78,33 +78,33 @@ public class SakspartCacheService extends CacheService<SakspartResource> {
 	}
 
     private void populateCache(String orgId) {
-		log.info("Populating Sakspart cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAKSPART, Constants.CACHE_SERVICE);
+		log.info("Populating Part cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PART, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<SakspartResource> getSakspartBySakspartId(String orgId, String sakspartId) {
+    public Optional<PartResource> getPartByPartId(String orgId, String partId) {
         return getOne(orgId, (resource) -> Optional
                 .ofNullable(resource)
-                .map(SakspartResource::getSakspartId)
+                .map(PartResource::getPartId)
                 .map(Identifikator::getIdentifikatorverdi)
-                .map(_id -> _id.equals(sakspartId))
+                .map(_id -> _id.equals(partId))
                 .orElse(false));
     }
 
 
 	@Override
     public void onAction(Event event) {
-        List<SakspartResource> data;
+        List<PartResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<SakspartResource> to SakspartResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), SakspartResource.class);
+            log.info("Compatibility: Converting FintResource<PartResource> to PartResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), PartResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_SAKSPART) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_PART) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
                 add(event.getOrgId(), data);
                 log.info("Added {} elements to cache for {}", data.size(), event.getOrgId());
