@@ -84,6 +84,24 @@ public class KorrespondansepartCacheService extends CacheService<Korrespondansep
     }
 
 
+    public Optional<KorrespondansepartResource> getKorrespondansepartByFodselsnummer(String orgId, String fodselsnummer) {
+        return getOne(orgId, (resource) -> Optional
+                .ofNullable(resource)
+                .map(KorrespondansepartResource::getFodselsnummer)
+                .map(Identifikator::getIdentifikatorverdi)
+                .map(_id -> _id.equals(fodselsnummer))
+                .orElse(false));
+    }
+
+    public Optional<KorrespondansepartResource> getKorrespondansepartByOrganisasjonsnummer(String orgId, String organisasjonsnummer) {
+        return getOne(orgId, (resource) -> Optional
+                .ofNullable(resource)
+                .map(KorrespondansepartResource::getOrganisasjonsnummer)
+                .map(Identifikator::getIdentifikatorverdi)
+                .map(_id -> _id.equals(organisasjonsnummer))
+                .orElse(false));
+    }
+
     public Optional<KorrespondansepartResource> getKorrespondansepartBySystemId(String orgId, String systemId) {
         return getOne(orgId, (resource) -> Optional
                 .ofNullable(resource)

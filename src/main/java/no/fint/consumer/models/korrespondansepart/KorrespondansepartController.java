@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
+
 import no.fint.audit.FintAuditService;
+
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -14,11 +16,11 @@ import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
+
 import no.fint.event.model.*;
-import no.fint.model.administrasjon.arkiv.ArkivActions;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
+
 import no.fint.relations.FintRelationsMediaType;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,14 +29,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.net.UnknownHostException;
+import java.net.URI;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
+import no.fint.model.administrasjon.arkiv.ArkivActions;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @Api(tags = {"Korrespondansepart"})
@@ -161,6 +169,93 @@ public class KorrespondansepartController {
         return result;
     }
 
+
+    @GetMapping("/fodselsnummer/{id:.+}")
+    public KorrespondansepartResource getKorrespondansepartByFodselsnummer(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
+        if (props.isOverrideOrgId() || orgId == null) {
+            orgId = props.getDefaultOrgId();
+        }
+        if (client == null) {
+            client = props.getDefaultClient();
+        }
+        log.debug("fodselsnummer: {}, OrgId: {}, Client: {}", id, orgId, client);
+
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setQuery("fodselsnummer/" + id);
+
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
+
+            Optional<KorrespondansepartResource> korrespondansepart = cacheService.getKorrespondansepartByFodselsnummer(orgId, id);
+
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return korrespondansepart.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+
+        } else {
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            if (response.getData() == null ||
+                    response.getData().isEmpty()) throw new EntityNotFoundException(id);
+
+            KorrespondansepartResource korrespondansepart = objectMapper.convertValue(response.getData().get(0), KorrespondansepartResource.class);
+
+            fintAuditService.audit(response, Status.SENT_TO_CLIENT);
+
+            return linker.toResource(korrespondansepart);
+        }    
+    }
+
+    @GetMapping("/organisasjonsnummer/{id:.+}")
+    public KorrespondansepartResource getKorrespondansepartByOrganisasjonsnummer(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
+        if (props.isOverrideOrgId() || orgId == null) {
+            orgId = props.getDefaultOrgId();
+        }
+        if (client == null) {
+            client = props.getDefaultClient();
+        }
+        log.debug("organisasjonsnummer: {}, OrgId: {}, Client: {}", id, orgId, client);
+
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setQuery("organisasjonsnummer/" + id);
+
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
+
+            Optional<KorrespondansepartResource> korrespondansepart = cacheService.getKorrespondansepartByOrganisasjonsnummer(orgId, id);
+
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return korrespondansepart.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+
+        } else {
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            if (response.getData() == null ||
+                    response.getData().isEmpty()) throw new EntityNotFoundException(id);
+
+            KorrespondansepartResource korrespondansepart = objectMapper.convertValue(response.getData().get(0), KorrespondansepartResource.class);
+
+            fintAuditService.audit(response, Status.SENT_TO_CLIENT);
+
+            return linker.toResource(korrespondansepart);
+        }    
+    }
+
     @GetMapping("/systemid/{id:.+}")
     public KorrespondansepartResource getKorrespondansepartBySystemId(
             @PathVariable String id,
@@ -275,6 +370,54 @@ public class KorrespondansepartController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
 
+  
+    @PutMapping("/fodselsnummer/{id:.+}")
+    public ResponseEntity putKorrespondansepartByFodselsnummer(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT) String client,
+            @RequestBody KorrespondansepartResource body
+    ) {
+        log.debug("putKorrespondansepartByFodselsnummer {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.trace("Body: {}", body);
+        linker.mapLinks(body);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_KORRESPONDANSEPART, client);
+        event.setQuery("fodselsnummer/" + id);
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.setOperation(Operation.UPDATE);
+        fintAuditService.audit(event);
+
+        consumerEventUtil.send(event);
+
+        statusCache.put(event.getCorrId(), event);
+
+        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+    }
+  
+    @PutMapping("/organisasjonsnummer/{id:.+}")
+    public ResponseEntity putKorrespondansepartByOrganisasjonsnummer(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT) String client,
+            @RequestBody KorrespondansepartResource body
+    ) {
+        log.debug("putKorrespondansepartByOrganisasjonsnummer {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.trace("Body: {}", body);
+        linker.mapLinks(body);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_KORRESPONDANSEPART, client);
+        event.setQuery("organisasjonsnummer/" + id);
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.setOperation(Operation.UPDATE);
+        fintAuditService.audit(event);
+
+        consumerEventUtil.send(event);
+
+        statusCache.put(event.getCorrId(), event);
+
+        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+    }
   
     @PutMapping("/systemid/{id:.+}")
     public ResponseEntity putKorrespondansepartBySystemId(

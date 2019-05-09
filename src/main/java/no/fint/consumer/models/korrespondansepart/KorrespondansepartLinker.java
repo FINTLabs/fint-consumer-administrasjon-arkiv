@@ -33,6 +33,12 @@ public class KorrespondansepartLinker extends FintLinker<KorrespondansepartResou
 
     @Override
     public String getSelfHref(KorrespondansepartResource korrespondansepart) {
+        if (!isNull(korrespondansepart.getFodselsnummer()) && !isEmpty(korrespondansepart.getFodselsnummer().getIdentifikatorverdi())) {
+            return createHrefWithId(korrespondansepart.getFodselsnummer().getIdentifikatorverdi(), "fodselsnummer");
+        }
+        if (!isNull(korrespondansepart.getOrganisasjonsnummer()) && !isEmpty(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi())) {
+            return createHrefWithId(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi(), "organisasjonsnummer");
+        }
         if (!isNull(korrespondansepart.getSystemId()) && !isEmpty(korrespondansepart.getSystemId().getIdentifikatorverdi())) {
             return createHrefWithId(korrespondansepart.getSystemId().getIdentifikatorverdi(), "systemid");
         }
