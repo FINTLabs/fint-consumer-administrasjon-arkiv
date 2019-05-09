@@ -134,7 +134,7 @@ public class SakController {
     }
 
     @GetMapping("/search")
-    public SakResources searchSak(
+    public SakResources search(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             HttpServletRequest request

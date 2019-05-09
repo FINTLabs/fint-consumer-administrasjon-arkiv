@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
-
 import no.fint.audit.FintAuditService;
-
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -16,11 +14,12 @@ import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
-
 import no.fint.event.model.*;
-
+import no.fint.model.administrasjon.arkiv.ArkivActions;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
 import no.fint.relations.FintRelationsMediaType;
-
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,18 +27,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.UnknownHostException;
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
-
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
-import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
 @Api(tags = {"Korrespondansepart"})
@@ -138,6 +133,33 @@ public class KorrespondansepartController {
         return linker.toResources(korrespondansepart);
     }
 
+    @GetMapping("/search")
+    public KorrespondansepartResources search(
+            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
+            HttpServletRequest request
+    ) throws InterruptedException {
+        if (StringUtils.isBlank(request.getQueryString())) {
+            throw new BadRequestException("Invalid query");
+        }
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setQuery("?" + request.getQueryString());
+        event.setOperation(Operation.READ);
+        BlockingQueue<Event> queue = synchronousEvents.register(event);
+        consumerEventUtil.send(event);
+
+        Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+        if (response.getData() == null ||
+                response.getData().isEmpty()) {
+            throw new EntityNotFoundException(event.getQuery());
+        }
+
+        KorrespondansepartResources result = new KorrespondansepartResources();
+        List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
+                objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
+        resources.forEach(result::addResource);
+        return result;
+    }
 
     @GetMapping("/systemid/{id:.+}")
     public KorrespondansepartResource getKorrespondansepartBySystemId(
