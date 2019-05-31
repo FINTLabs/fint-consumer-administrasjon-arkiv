@@ -120,6 +120,7 @@ public class DokumentfilController {
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTFIL, client);
+        event.setOperation(Operation.READ);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
@@ -150,6 +151,7 @@ public class DokumentfilController {
         log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_DOKUMENTFIL, client);
+        event.setOperation(Operation.READ);
         event.setQuery("systemId/" + id);
 
         if (cacheService != null) {

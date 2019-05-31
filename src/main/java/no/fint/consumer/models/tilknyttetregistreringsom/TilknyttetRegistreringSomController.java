@@ -123,6 +123,7 @@ public class TilknyttetRegistreringSomController {
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_TILKNYTTETREGISTRERINGSOM, client);
+        event.setOperation(Operation.READ);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
@@ -153,6 +154,7 @@ public class TilknyttetRegistreringSomController {
         log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_TILKNYTTETREGISTRERINGSOM, client);
+        event.setOperation(Operation.READ);
         event.setQuery("systemId/" + id);
 
         if (cacheService != null) {

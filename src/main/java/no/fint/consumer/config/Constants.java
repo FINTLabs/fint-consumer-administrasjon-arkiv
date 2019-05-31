@@ -42,10 +42,16 @@ public enum Constants {
     public static final String CACHE_INITIALDELAY_SAKSSTATUS = "${fint.consumer.cache.initialDelay.saksstatus:160000}";
     public static final String CACHE_FIXEDRATE_SAKSSTATUS = "${fint.consumer.cache.fixedRate.saksstatus:900000}";
     
-    public static final String CACHE_INITIALDELAY_TILKNYTTETREGISTRERINGSOM = "${fint.consumer.cache.initialDelay.tilknyttetregistreringsom:170000}";
+    public static final String CACHE_INITIALDELAY_SKJERMINGSHJEMMEL = "${fint.consumer.cache.initialDelay.skjermingshjemmel:170000}";
+    public static final String CACHE_FIXEDRATE_SKJERMINGSHJEMMEL = "${fint.consumer.cache.fixedRate.skjermingshjemmel:900000}";
+    
+    public static final String CACHE_INITIALDELAY_TILGANGSRESTRIKSJON = "${fint.consumer.cache.initialDelay.tilgangsrestriksjon:180000}";
+    public static final String CACHE_FIXEDRATE_TILGANGSRESTRIKSJON = "${fint.consumer.cache.fixedRate.tilgangsrestriksjon:900000}";
+    
+    public static final String CACHE_INITIALDELAY_TILKNYTTETREGISTRERINGSOM = "${fint.consumer.cache.initialDelay.tilknyttetregistreringsom:190000}";
     public static final String CACHE_FIXEDRATE_TILKNYTTETREGISTRERINGSOM = "${fint.consumer.cache.fixedRate.tilknyttetregistreringsom:900000}";
     
-    public static final String CACHE_INITIALDELAY_VARIANTFORMAT = "${fint.consumer.cache.initialDelay.variantformat:180000}";
+    public static final String CACHE_INITIALDELAY_VARIANTFORMAT = "${fint.consumer.cache.initialDelay.variantformat:200000}";
     public static final String CACHE_FIXEDRATE_VARIANTFORMAT = "${fint.consumer.cache.fixedRate.variantformat:900000}";
     
 

@@ -15,6 +15,8 @@ public enum RestEndpoints {
 	public static final String PARTROLLE = "/partrolle";
 	public static final String SAK = "/sak";
 	public static final String SAKSSTATUS = "/saksstatus";
+	public static final String SKJERMINGSHJEMMEL = "/skjermingshjemmel";
+	public static final String TILGANGSRESTRIKSJON = "/tilgangsrestriksjon";
 	public static final String TILKNYTTETREGISTRERINGSOM = "/tilknyttetregistreringsom";
 	public static final String VARIANTFORMAT = "/variantformat";
 
