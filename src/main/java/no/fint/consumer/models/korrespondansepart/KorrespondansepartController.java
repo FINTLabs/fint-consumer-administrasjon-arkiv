@@ -143,7 +143,7 @@ public class KorrespondansepartController {
     }
 
     @GetMapping("/search")
-    public KorrespondansepartResources search(
+    public KorrespondansepartResources searchKorrespondansepart(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             HttpServletRequest request
@@ -163,11 +163,10 @@ public class KorrespondansepartController {
             throw new EntityNotFoundException(event.getQuery());
         }
 
-        KorrespondansepartResources result = new KorrespondansepartResources();
         List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
-        resources.forEach(result::addResource);
-        return result;
+
+        return linker.toResources(resources);
     }
 
 

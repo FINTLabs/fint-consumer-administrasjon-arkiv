@@ -135,7 +135,7 @@ public class SakController {
     }
 
     @GetMapping("/search")
-    public SakResources search(
+    public SakResources searchSak(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             HttpServletRequest request
@@ -155,11 +155,10 @@ public class SakController {
             throw new EntityNotFoundException(event.getQuery());
         }
 
-        SakResources result = new SakResources();
         List<SakResource> resources = objectMapper.convertValue(response.getData(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, SakResource.class));
-        resources.forEach(result::addResource);
-        return result;
+
+        return linker.toResources(resources);
     }
 
     @GetMapping("/mappeid/{ar}/{sekvensnummer}")
