@@ -126,6 +126,7 @@ public class KorrespondansepartController {
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_KORRESPONDANSEPART, client);
+        event.setOperation(Operation.READ);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
@@ -183,6 +184,7 @@ public class KorrespondansepartController {
         log.debug("fodselsnummer: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setOperation(Operation.READ);
         event.setQuery("fodselsnummer/" + id);
 
         if (cacheService != null) {
@@ -226,6 +228,7 @@ public class KorrespondansepartController {
         log.debug("organisasjonsnummer: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setOperation(Operation.READ);
         event.setQuery("organisasjonsnummer/" + id);
 
         if (cacheService != null) {
@@ -269,6 +272,7 @@ public class KorrespondansepartController {
         log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
+        event.setOperation(Operation.READ);
         event.setQuery("systemId/" + id);
 
         if (cacheService != null) {

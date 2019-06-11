@@ -22,6 +22,8 @@ public class LinkMapper {
 			.put(Sak.class.getName(), contextPath + RestEndpoints.SAK)
 			.put(Saksstatus.class.getName(), contextPath + RestEndpoints.SAKSSTATUS)
 			.put(TilknyttetRegistreringSom.class.getName(), contextPath + RestEndpoints.TILKNYTTETREGISTRERINGSOM)
+			.put(Skjermingshjemmel.class.getName(), contextPath + RestEndpoints.SKJERMINGSHJEMMEL)
+			.put(Tilgangsrestriksjon.class.getName(), contextPath + RestEndpoints.TILGANGSRESTRIKSJON)
 			.put(Variantformat.class.getName(), contextPath + RestEndpoints.VARIANTFORMAT)
 			/* .put(TODO,TODO) */
 			.build();
