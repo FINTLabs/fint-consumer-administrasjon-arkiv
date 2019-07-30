@@ -77,7 +77,8 @@ public class JournalStatusCacheService extends CacheService<JournalStatusResourc
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating JournalStatus cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_JOURNALSTATUS, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

@@ -77,7 +77,8 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating DokumentType cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTTYPE, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

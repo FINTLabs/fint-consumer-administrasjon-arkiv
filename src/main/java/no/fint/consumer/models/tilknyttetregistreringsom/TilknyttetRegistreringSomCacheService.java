@@ -77,7 +77,8 @@ public class TilknyttetRegistreringSomCacheService extends CacheService<Tilknytt
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating TilknyttetRegistreringSom cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_TILKNYTTETREGISTRERINGSOM, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

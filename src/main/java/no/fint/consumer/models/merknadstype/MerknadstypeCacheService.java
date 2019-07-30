@@ -77,7 +77,8 @@ public class MerknadstypeCacheService extends CacheService<MerknadstypeResource>
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating Merknadstype cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_MERKNADSTYPE, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

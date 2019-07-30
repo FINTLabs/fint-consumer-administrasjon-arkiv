@@ -77,7 +77,8 @@ public class TilgangsrestriksjonCacheService extends CacheService<Tilgangsrestri
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating Tilgangsrestriksjon cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_TILGANGSRESTRIKSJON, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

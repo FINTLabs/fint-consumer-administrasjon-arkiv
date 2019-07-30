@@ -77,7 +77,8 @@ public class JournalpostTypeCacheService extends CacheService<JournalpostTypeRes
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating JournalpostType cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_JOURNALPOSTTYPE, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

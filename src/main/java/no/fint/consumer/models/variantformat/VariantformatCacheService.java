@@ -77,7 +77,8 @@ public class VariantformatCacheService extends CacheService<VariantformatResourc
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating Variantformat cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_VARIANTFORMAT, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

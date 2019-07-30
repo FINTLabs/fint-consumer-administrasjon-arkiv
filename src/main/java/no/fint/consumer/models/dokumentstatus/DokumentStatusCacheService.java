@@ -77,7 +77,8 @@ public class DokumentStatusCacheService extends CacheService<DokumentStatusResou
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating DokumentStatus cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTSTATUS, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

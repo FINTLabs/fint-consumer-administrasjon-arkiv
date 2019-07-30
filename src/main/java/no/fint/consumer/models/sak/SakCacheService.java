@@ -77,7 +77,8 @@ public class SakCacheService extends CacheService<SakResource> {
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating Sak cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAK, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
