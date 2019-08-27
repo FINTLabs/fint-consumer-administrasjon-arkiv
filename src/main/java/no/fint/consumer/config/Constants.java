@@ -31,6 +31,8 @@ public enum Constants {
     public static final String CACHE_FIXEDRATE_KORRESPONDANSEPARTTYPE = "${fint.consumer.cache.fixedRate.korrespondanseparttype:900000}";
     
     public static final String CACHE_INITIALDELAY_PART = "${fint.consumer.cache.initialDelay.part:130000}";
+    public static final String CACHE_INITIALDELAY_MERKNADSTYPE = "${fint.consumer.cache.initialDelay.merknadstype:150000}";
+    public static final String CACHE_FIXEDRATE_MERKNADSTYPE = "${fint.consumer.cache.fixedRate.merknadstype:900000}";
     public static final String CACHE_FIXEDRATE_PART = "${fint.consumer.cache.fixedRate.part:900000}";
     
     public static final String CACHE_INITIALDELAY_PARTROLLE = "${fint.consumer.cache.initialDelay.partrolle:140000}";

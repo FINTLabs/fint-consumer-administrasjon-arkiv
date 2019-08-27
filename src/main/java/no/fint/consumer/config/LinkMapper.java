@@ -17,6 +17,7 @@ public class LinkMapper {
 			.put(JournalStatus.class.getName(), contextPath + RestEndpoints.JOURNALSTATUS)
 			.put(Korrespondansepart.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPART)
 			.put(KorrespondansepartType.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPARTTYPE)
+			.put(Merknadstype.class.getName(), contextPath + RestEndpoints.MERKNADSTYPE)
 			.put(Part.class.getName(), contextPath + RestEndpoints.PART)
 			.put(PartRolle.class.getName(), contextPath + RestEndpoints.PARTROLLE)
 			.put(Sak.class.getName(), contextPath + RestEndpoints.SAK)

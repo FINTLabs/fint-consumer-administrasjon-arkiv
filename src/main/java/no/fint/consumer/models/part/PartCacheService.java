@@ -77,7 +77,8 @@ public class PartCacheService extends CacheService<PartResource> {
 		populateCache(orgId);
 	}
 
-    private void populateCache(String orgId) {
+    @Override
+    public void populateCache(String orgId) {
 		log.info("Populating Part cache for {}", orgId);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PART, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);

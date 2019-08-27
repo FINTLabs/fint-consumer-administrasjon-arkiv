@@ -1,4 +1,4 @@
-package no.fint.consumer.models.dokumentstatus;
+package no.fint.consumer.models.merknadstype;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,16 +25,16 @@ import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 
-import no.fint.model.administrasjon.arkiv.DokumentStatus;
-import no.fint.model.resource.administrasjon.arkiv.DokumentStatusResource;
+import no.fint.model.administrasjon.arkiv.Merknadstype;
+import no.fint.model.resource.administrasjon.arkiv.MerknadstypeResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.dokumentstatus", havingValue = "false", matchIfMissing = true)
-public class DokumentStatusCacheService extends CacheService<DokumentStatusResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.merknadstype", havingValue = "false", matchIfMissing = true)
+public class MerknadstypeCacheService extends CacheService<MerknadstypeResource> {
 
-    public static final String MODEL = DokumentStatus.class.getSimpleName().toLowerCase();
+    public static final String MODEL = Merknadstype.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -49,16 +49,16 @@ public class DokumentStatusCacheService extends CacheService<DokumentStatusResou
     private ConsumerProps props;
 
     @Autowired
-    private DokumentStatusLinker linker;
+    private MerknadstypeLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public DokumentStatusCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_DOKUMENTSTATUS, ArkivActions.UPDATE_DOKUMENTSTATUS);
+    public MerknadstypeCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_MERKNADSTYPE, ArkivActions.UPDATE_MERKNADSTYPE);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, DokumentStatusResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, MerknadstypeResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -67,7 +67,7 @@ public class DokumentStatusCacheService extends CacheService<DokumentStatusResou
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_DOKUMENTSTATUS, fixedRateString = Constants.CACHE_FIXEDRATE_DOKUMENTSTATUS)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_MERKNADSTYPE, fixedRateString = Constants.CACHE_FIXEDRATE_MERKNADSTYPE)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -79,16 +79,16 @@ public class DokumentStatusCacheService extends CacheService<DokumentStatusResou
 
     @Override
     public void populateCache(String orgId) {
-		log.info("Populating DokumentStatus cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTSTATUS, Constants.CACHE_SERVICE);
+		log.info("Populating Merknadstype cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_MERKNADSTYPE, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<DokumentStatusResource> getDokumentStatusBySystemId(String orgId, String systemId) {
+    public Optional<MerknadstypeResource> getMerknadstypeBySystemId(String orgId, String systemId) {
         return getOne(orgId, (resource) -> Optional
                 .ofNullable(resource)
-                .map(DokumentStatusResource::getSystemId)
+                .map(MerknadstypeResource::getSystemId)
                 .map(Identifikator::getIdentifikatorverdi)
                 .map(_id -> _id.equals(systemId))
                 .orElse(false));
@@ -97,15 +97,15 @@ public class DokumentStatusCacheService extends CacheService<DokumentStatusResou
 
 	@Override
     public void onAction(Event event) {
-        List<DokumentStatusResource> data;
+        List<MerknadstypeResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<DokumentStatusResource> to DokumentStatusResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), DokumentStatusResource.class);
+            log.info("Compatibility: Converting FintResource<MerknadstypeResource> to MerknadstypeResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), MerknadstypeResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_DOKUMENTSTATUS) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_MERKNADSTYPE) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
                 add(event.getOrgId(), data);
                 log.info("Added {} elements to cache for {}", data.size(), event.getOrgId());

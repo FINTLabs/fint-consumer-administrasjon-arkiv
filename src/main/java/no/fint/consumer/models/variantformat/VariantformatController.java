@@ -95,17 +95,6 @@ public class VariantformatController {
         return ImmutableMap.of("size", cacheService.getAll(orgId).size());
     }
 
-    @PostMapping("/cache/rebuild")
-    public void rebuildCache(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
-        if (cacheService == null) {
-            throw new CacheDisabledException("Variantformat cache is disabled.");
-        }
-        if (props.isOverrideOrgId() || orgId == null) {
-            orgId = props.getDefaultOrgId();
-        }
-        cacheService.rebuildCache(orgId);
-    }
-
     @GetMapping
     public VariantformatResources getVariantformat(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
