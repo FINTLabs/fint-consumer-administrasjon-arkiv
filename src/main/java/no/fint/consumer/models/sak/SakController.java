@@ -139,10 +139,6 @@ public class SakController {
         consumerEventUtil.send(event);
 
         Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
-        if (response.getData() == null ||
-                response.getData().isEmpty()) {
-            throw new EntityNotFoundException(event.getQuery());
-        }
 
         List<SakResource> resources = objectMapper.convertValue(response.getData(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, SakResource.class));

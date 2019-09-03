@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
-
 import no.fint.audit.FintAuditService;
-
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -16,11 +14,11 @@ import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
-
 import no.fint.event.model.*;
-
+import no.fint.model.administrasjon.arkiv.ArkivActions;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
 import no.fint.relations.FintRelationsMediaType;
-
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -29,20 +27,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.UnknownHostException;
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
-
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
-import no.fint.model.administrasjon.arkiv.ArkivActions;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @Api(tags = {"Korrespondansepart"})
@@ -88,7 +80,7 @@ public class KorrespondansepartController {
     }
 
     @GetMapping("/cache/size")
-     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Korrespondansepart cache is disabled.");
         }
@@ -147,10 +139,6 @@ public class KorrespondansepartController {
         consumerEventUtil.send(event);
 
         Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
-        if (response.getData() == null ||
-                response.getData().isEmpty()) {
-            throw new EntityNotFoundException(event.getQuery());
-        }
 
         List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
                 objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
@@ -200,7 +188,7 @@ public class KorrespondansepartController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(korrespondansepart);
-        }    
+        }
     }
 
     @GetMapping("/organisasjonsnummer/{id:.+}")
@@ -244,7 +232,7 @@ public class KorrespondansepartController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(korrespondansepart);
-        }    
+        }
     }
 
     @GetMapping("/systemid/{id:.+}")
@@ -288,9 +276,8 @@ public class KorrespondansepartController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(korrespondansepart);
-        }    
+        }
     }
-
 
 
     @GetMapping("/status/{id}")
@@ -306,7 +293,11 @@ public class KorrespondansepartController {
         log.debug("Event: {}", event);
         log.trace("Data: {}", event.getData());
         if (!event.getOrgId().equals(orgId)) {
-            return ResponseEntity.badRequest().body(new EventResponse() { { setMessage("Invalid OrgId"); } } );
+            return ResponseEntity.badRequest().body(new EventResponse() {
+                {
+                    setMessage("Invalid OrgId");
+                }
+            });
         }
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
@@ -362,7 +353,7 @@ public class KorrespondansepartController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
 
-  
+
     @PutMapping("/fodselsnummer/{id:.+}")
     public ResponseEntity putKorrespondansepartByFodselsnummer(
             @PathVariable String id,
@@ -386,7 +377,7 @@ public class KorrespondansepartController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
     @PutMapping("/organisasjonsnummer/{id:.+}")
     public ResponseEntity putKorrespondansepartByOrganisasjonsnummer(
             @PathVariable String id,
@@ -410,7 +401,7 @@ public class KorrespondansepartController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
     @PutMapping("/systemid/{id:.+}")
     public ResponseEntity putKorrespondansepartBySystemId(
             @PathVariable String id,
@@ -434,7 +425,7 @@ public class KorrespondansepartController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
 
     //
     // Exception handlers
