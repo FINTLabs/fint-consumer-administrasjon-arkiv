@@ -9,3 +9,6 @@ fint:
         part: true
         korrespondansepart: true
         dokumentfil: true
+spring:
+  mvc:
+    logResolvedException: false
