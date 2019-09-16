@@ -56,7 +56,9 @@ spec:
             - {name: fint.hazelcast.kubernetes.labelValue, value: administrasjon-arkiv}
             - {name: fint.relations.default-base-url, value: 'https://beta.felleskomponent.no'}
             - {name: server.context-path, value: /administrasjon/arkiv}
-          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:PR-4.2
+            - name: logging.level.no.fint.consumer.models.arkivressurs.ArkivressursController
+              value: TRACE
+          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:PR-5.2
           name: consumer-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
