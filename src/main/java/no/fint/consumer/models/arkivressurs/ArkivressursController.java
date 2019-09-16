@@ -129,6 +129,50 @@ public class ArkivressursController {
     }
 
 
+    @GetMapping("/kildesystemid/{id:.+}")
+    public ArkivressursResource getArkivressursByKildesystemId(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
+        if (props.isOverrideOrgId() || orgId == null) {
+            orgId = props.getDefaultOrgId();
+        }
+        if (client == null) {
+            client = props.getDefaultClient();
+        }
+        log.debug("kildesystemId: {}, OrgId: {}, Client: {}", id, orgId, client);
+
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ARKIVRESSURS, client);
+        event.setOperation(Operation.READ);
+        event.setQuery("kildesystemId/" + id);
+
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
+
+            Optional<ArkivressursResource> arkivressurs = cacheService.getArkivressursByKildesystemId(orgId, id);
+
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return arkivressurs.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+
+        } else {
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            if (response.getData() == null ||
+                    response.getData().isEmpty()) throw new EntityNotFoundException(id);
+
+            ArkivressursResource arkivressurs = objectMapper.convertValue(response.getData().get(0), ArkivressursResource.class);
+
+            fintAuditService.audit(response, Status.SENT_TO_CLIENT);
+
+            return linker.toResource(arkivressurs);
+        }    
+    }
+
     @GetMapping("/systemid/{id:.+}")
     public ArkivressursResource getArkivressursBySystemId(
             @PathVariable String id,
@@ -175,6 +219,124 @@ public class ArkivressursController {
 
 
 
+    @GetMapping("/status/{id}")
+    public ResponseEntity getStatus(
+            @PathVariable String id,
+            @RequestHeader(HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(HeaderConstants.CLIENT) String client) {
+        log.debug("/status/{} for {} from {}", id, orgId, client);
+        if (!statusCache.containsKey(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        Event event = statusCache.get(id);
+        log.debug("Event: {}", event);
+        log.trace("Data: {}", event.getData());
+        if (!event.getOrgId().equals(orgId)) {
+            return ResponseEntity.badRequest().body(new EventResponse() { { setMessage("Invalid OrgId"); } } );
+        }
+        if (event.getResponseStatus() == null) {
+            return ResponseEntity.status(HttpStatus.ACCEPTED).build();
+        }
+        List<ArkivressursResource> result;
+        switch (event.getResponseStatus()) {
+            case ACCEPTED:
+                if (event.getOperation() == Operation.VALIDATE) {
+                    fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+                    return ResponseEntity.ok(event.getResponse());
+                }
+                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArkivressursResource.class));
+                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result.get(0))).build().toUri();
+                event.setMessage(location.toString());
+                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
+            case ERROR:
+                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(event.getResponse());
+            case CONFLICT:
+                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArkivressursResource.class));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResources(result));
+            case REJECTED:
+                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+                return ResponseEntity.badRequest().body(event.getResponse());
+        }
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(event.getResponse());
+    }
+
+    @PostMapping
+    public ResponseEntity postArkivressurs(
+            @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT) String client,
+            @RequestBody ArkivressursResource body,
+            @RequestParam(name = "validate", required = false) boolean validate
+    ) {
+        log.debug("postArkivressurs, Validate: {}, OrgId: {}, Client: {}", validate, orgId, client);
+        log.trace("Body: {}", body);
+        linker.mapLinks(body);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_ARKIVRESSURS, client);
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.setOperation(Operation.CREATE);
+        if (validate) {
+            event.setQuery("VALIDATE");
+            event.setOperation(Operation.VALIDATE);
+        }
+        consumerEventUtil.send(event);
+
+        statusCache.put(event.getCorrId(), event);
+
+        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+    }
+
+  
+    @PutMapping("/kildesystemid/{id:.+}")
+    public ResponseEntity putArkivressursByKildesystemId(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT) String client,
+            @RequestBody ArkivressursResource body
+    ) {
+        log.debug("putArkivressursByKildesystemId {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.trace("Body: {}", body);
+        linker.mapLinks(body);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_ARKIVRESSURS, client);
+        event.setQuery("kildesystemid/" + id);
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.setOperation(Operation.UPDATE);
+        fintAuditService.audit(event);
+
+        consumerEventUtil.send(event);
+
+        statusCache.put(event.getCorrId(), event);
+
+        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+    }
+  
+    @PutMapping("/systemid/{id:.+}")
+    public ResponseEntity putArkivressursBySystemId(
+            @PathVariable String id,
+            @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
+            @RequestHeader(name = HeaderConstants.CLIENT) String client,
+            @RequestBody ArkivressursResource body
+    ) {
+        log.debug("putArkivressursBySystemId {}, OrgId: {}, Client: {}", id, orgId, client);
+        log.trace("Body: {}", body);
+        linker.mapLinks(body);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_ARKIVRESSURS, client);
+        event.setQuery("systemid/" + id);
+        event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
+        event.setOperation(Operation.UPDATE);
+        fintAuditService.audit(event);
+
+        consumerEventUtil.send(event);
+
+        statusCache.put(event.getCorrId(), event);
+
+        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+    }
+  
 
     //
     // Exception handlers

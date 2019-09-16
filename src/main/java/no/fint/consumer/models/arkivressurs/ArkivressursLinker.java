@@ -33,6 +33,9 @@ public class ArkivressursLinker extends FintLinker<ArkivressursResource> {
 
     @Override
     public String getSelfHref(ArkivressursResource arkivressurs) {
+        if (!isNull(arkivressurs.getKildesystemId()) && !isEmpty(arkivressurs.getKildesystemId().getIdentifikatorverdi())) {
+            return createHrefWithId(arkivressurs.getKildesystemId().getIdentifikatorverdi(), "kildesystemid");
+        }
         if (!isNull(arkivressurs.getSystemId()) && !isEmpty(arkivressurs.getSystemId().getIdentifikatorverdi())) {
             return createHrefWithId(arkivressurs.getSystemId().getIdentifikatorverdi(), "systemid");
         }

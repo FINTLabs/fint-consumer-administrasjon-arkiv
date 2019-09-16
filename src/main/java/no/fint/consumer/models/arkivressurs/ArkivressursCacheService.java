@@ -85,6 +85,15 @@ public class ArkivressursCacheService extends CacheService<ArkivressursResource>
     }
 
 
+    public Optional<ArkivressursResource> getArkivressursByKildesystemId(String orgId, String kildesystemId) {
+        return getOne(orgId, (resource) -> Optional
+                .ofNullable(resource)
+                .map(ArkivressursResource::getKildesystemId)
+                .map(Identifikator::getIdentifikatorverdi)
+                .map(_id -> _id.equals(kildesystemId))
+                .orElse(false));
+    }
+
     public Optional<ArkivressursResource> getArkivressursBySystemId(String orgId, String systemId) {
         return getOne(orgId, (resource) -> Optional
                 .ofNullable(resource)
