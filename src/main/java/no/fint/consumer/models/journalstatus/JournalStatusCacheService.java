@@ -12,7 +12,6 @@ import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
 import no.fint.event.model.Event;
 import no.fint.event.model.ResponseStatus;
-import no.fint.model.felles.kompleksedatatyper.Identifikator;
 import no.fint.relations.FintResourceCompatibility;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +27,7 @@ import java.util.Optional;
 import no.fint.model.administrasjon.arkiv.JournalStatus;
 import no.fint.model.resource.administrasjon.arkiv.JournalStatusResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
+import no.fint.model.felles.kompleksedatatyper.Identifikator;
 
 @Slf4j
 @Service
