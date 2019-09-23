@@ -104,7 +104,7 @@ spec:
             - {name: fint.provider.max-number-of-emitters, value: '5'}
             - {name: server.context-path, value: /administrasjon/arkiv/provider}
             - {name: fint.provider.assets.endpoint, value: 'https://admin.fintlabs.no/api/components/assets/administrasjon_arkiv'}
-          image: fintlabs.azurecr.io/provider:PR-32.4
+          image: fintlabs.azurecr.io/provider:PR-32.5
           name: provider-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
