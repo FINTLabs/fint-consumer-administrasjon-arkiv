@@ -1,4 +1,4 @@
-package no.fint.consumer.models.dokumenttype;
+package no.fint.consumer.models.arkivdel;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,17 +26,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import no.fint.model.administrasjon.arkiv.DokumentType;
-import no.fint.model.resource.administrasjon.arkiv.DokumentTypeResource;
+import no.fint.model.administrasjon.arkiv.Arkivdel;
+import no.fint.model.resource.administrasjon.arkiv.ArkivdelResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 import no.fint.model.felles.kompleksedatatyper.Identifikator;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.dokumenttype", havingValue = "false", matchIfMissing = true)
-public class DokumentTypeCacheService extends CacheService<DokumentTypeResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.arkivdel", havingValue = "false", matchIfMissing = true)
+public class ArkivdelCacheService extends CacheService<ArkivdelResource> {
 
-    public static final String MODEL = DokumentType.class.getSimpleName().toLowerCase();
+    public static final String MODEL = Arkivdel.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -51,16 +51,16 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
     private ConsumerProps props;
 
     @Autowired
-    private DokumentTypeLinker linker;
+    private ArkivdelLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public DokumentTypeCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_DOKUMENTTYPE, ArkivActions.UPDATE_DOKUMENTTYPE);
+    public ArkivdelCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_ARKIVDEL, ArkivActions.UPDATE_ARKIVDEL);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, DokumentTypeResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, ArkivdelResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -69,7 +69,7 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_DOKUMENTTYPE, fixedRateString = Constants.CACHE_FIXEDRATE_DOKUMENTTYPE)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_ARKIVDEL, fixedRateString = Constants.CACHE_FIXEDRATE_ARKIVDEL)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -81,17 +81,17 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
 
     @Override
     public void populateCache(String orgId) {
-		log.info("Populating DokumentType cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTTYPE, Constants.CACHE_SERVICE);
+		log.info("Populating Arkivdel cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_ARKIVDEL, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<DokumentTypeResource> getDokumentTypeBySystemId(String orgId, String systemId) {
+    public Optional<ArkivdelResource> getArkivdelBySystemId(String orgId, String systemId) {
         return getOne(orgId, systemId.hashCode(),
             (resource) -> Optional
                 .ofNullable(resource)
-                .map(DokumentTypeResource::getSystemId)
+                .map(ArkivdelResource::getSystemId)
                 .map(Identifikator::getIdentifikatorverdi)
                 .map(systemId::equals)
                 .orElse(false));
@@ -100,17 +100,17 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
 
 	@Override
     public void onAction(Event event) {
-        List<DokumentTypeResource> data;
+        List<ArkivdelResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<DokumentTypeResource> to DokumentTypeResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), DokumentTypeResource.class);
+            log.info("Compatibility: Converting FintResource<ArkivdelResource> to ArkivdelResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), ArkivdelResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_DOKUMENTTYPE) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_ARKIVDEL) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
-                List<CacheObject<DokumentTypeResource>> cacheObjects = data
+                List<CacheObject<ArkivdelResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());
@@ -120,7 +120,7 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
                 log.debug("Ignoring payload for {} with response status {}", event.getOrgId(), event.getResponseStatus());
             }
         } else {
-            List<CacheObject<DokumentTypeResource>> cacheObjects = data
+            List<CacheObject<ArkivdelResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());

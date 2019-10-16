@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class AdministrativEnhetLinker extends FintLinker<AdministrativEnhetResou
         
         return null;
     }
-    
+
+    int[] hashCodes(AdministrativEnhetResource administrativenhet) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(administrativenhet.getSystemId()) && !isEmpty(administrativenhet.getSystemId().getIdentifikatorverdi())) {
+            builder.add(administrativenhet.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

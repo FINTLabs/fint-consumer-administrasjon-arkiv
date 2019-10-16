@@ -12,7 +12,9 @@ public class LinkMapper {
 	public static Map<String, String> linkMapper(String contextPath) {
 		return ImmutableMap.<String,String>builder()
 			.put(AdministrativEnhet.class.getName(), contextPath + RestEndpoints.ADMINISTRATIVENHET)
+			.put(Arkivdel.class.getName(), contextPath + RestEndpoints.ARKIVDEL)
 			.put(Arkivressurs.class.getName(), contextPath + RestEndpoints.ARKIVRESSURS)
+			.put(Autorisasjon.class.getName(), contextPath + RestEndpoints.AUTORISASJON)
 			.put(Dokumentfil.class.getName(), contextPath + RestEndpoints.DOKUMENTFIL)
 			.put(DokumentStatus.class.getName(), contextPath + RestEndpoints.DOKUMENTSTATUS)
 			.put(DokumentType.class.getName(), contextPath + RestEndpoints.DOKUMENTTYPE)

@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -42,6 +43,18 @@ public class SakLinker extends FintLinker<SakResource> {
         
         return null;
     }
-    
+
+    int[] hashCodes(SakResource sak) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(sak.getMappeId()) && !isEmpty(sak.getMappeId().getIdentifikatorverdi())) {
+            builder.add(sak.getMappeId().getIdentifikatorverdi().hashCode());
+        }
+        if (!isNull(sak.getSystemId()) && !isEmpty(sak.getSystemId().getIdentifikatorverdi())) {
+            builder.add(sak.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

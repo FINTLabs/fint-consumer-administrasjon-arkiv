@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -45,6 +46,21 @@ public class KorrespondansepartLinker extends FintLinker<KorrespondansepartResou
         
         return null;
     }
-    
+
+    int[] hashCodes(KorrespondansepartResource korrespondansepart) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(korrespondansepart.getFodselsnummer()) && !isEmpty(korrespondansepart.getFodselsnummer().getIdentifikatorverdi())) {
+            builder.add(korrespondansepart.getFodselsnummer().getIdentifikatorverdi().hashCode());
+        }
+        if (!isNull(korrespondansepart.getOrganisasjonsnummer()) && !isEmpty(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi())) {
+            builder.add(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi().hashCode());
+        }
+        if (!isNull(korrespondansepart.getSystemId()) && !isEmpty(korrespondansepart.getSystemId().getIdentifikatorverdi())) {
+            builder.add(korrespondansepart.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

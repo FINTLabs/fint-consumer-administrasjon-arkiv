@@ -1,4 +1,4 @@
-package no.fint.consumer.models.dokumenttype;
+package no.fint.consumer.models.autorisasjon;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,17 +26,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import no.fint.model.administrasjon.arkiv.DokumentType;
-import no.fint.model.resource.administrasjon.arkiv.DokumentTypeResource;
+import no.fint.model.administrasjon.arkiv.Autorisasjon;
+import no.fint.model.resource.administrasjon.arkiv.AutorisasjonResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 import no.fint.model.felles.kompleksedatatyper.Identifikator;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.dokumenttype", havingValue = "false", matchIfMissing = true)
-public class DokumentTypeCacheService extends CacheService<DokumentTypeResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.autorisasjon", havingValue = "false", matchIfMissing = true)
+public class AutorisasjonCacheService extends CacheService<AutorisasjonResource> {
 
-    public static final String MODEL = DokumentType.class.getSimpleName().toLowerCase();
+    public static final String MODEL = Autorisasjon.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -51,16 +51,16 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
     private ConsumerProps props;
 
     @Autowired
-    private DokumentTypeLinker linker;
+    private AutorisasjonLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public DokumentTypeCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_DOKUMENTTYPE, ArkivActions.UPDATE_DOKUMENTTYPE);
+    public AutorisasjonCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_AUTORISASJON, ArkivActions.UPDATE_AUTORISASJON);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, DokumentTypeResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, AutorisasjonResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -69,7 +69,7 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_DOKUMENTTYPE, fixedRateString = Constants.CACHE_FIXEDRATE_DOKUMENTTYPE)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_AUTORISASJON, fixedRateString = Constants.CACHE_FIXEDRATE_AUTORISASJON)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -81,17 +81,17 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
 
     @Override
     public void populateCache(String orgId) {
-		log.info("Populating DokumentType cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTTYPE, Constants.CACHE_SERVICE);
+		log.info("Populating Autorisasjon cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_AUTORISASJON, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<DokumentTypeResource> getDokumentTypeBySystemId(String orgId, String systemId) {
+    public Optional<AutorisasjonResource> getAutorisasjonBySystemId(String orgId, String systemId) {
         return getOne(orgId, systemId.hashCode(),
             (resource) -> Optional
                 .ofNullable(resource)
-                .map(DokumentTypeResource::getSystemId)
+                .map(AutorisasjonResource::getSystemId)
                 .map(Identifikator::getIdentifikatorverdi)
                 .map(systemId::equals)
                 .orElse(false));
@@ -100,17 +100,17 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
 
 	@Override
     public void onAction(Event event) {
-        List<DokumentTypeResource> data;
+        List<AutorisasjonResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<DokumentTypeResource> to DokumentTypeResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), DokumentTypeResource.class);
+            log.info("Compatibility: Converting FintResource<AutorisasjonResource> to AutorisasjonResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), AutorisasjonResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_DOKUMENTTYPE) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_AUTORISASJON) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
-                List<CacheObject<DokumentTypeResource>> cacheObjects = data
+                List<CacheObject<AutorisasjonResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());
@@ -120,7 +120,7 @@ public class DokumentTypeCacheService extends CacheService<DokumentTypeResource>
                 log.debug("Ignoring payload for {} with response status {}", event.getOrgId(), event.getResponseStatus());
             }
         } else {
-            List<CacheObject<DokumentTypeResource>> cacheObjects = data
+            List<CacheObject<AutorisasjonResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());

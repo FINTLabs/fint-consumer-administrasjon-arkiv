@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class TilgangsrestriksjonLinker extends FintLinker<TilgangsrestriksjonRes
         
         return null;
     }
-    
+
+    int[] hashCodes(TilgangsrestriksjonResource tilgangsrestriksjon) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(tilgangsrestriksjon.getSystemId()) && !isEmpty(tilgangsrestriksjon.getSystemId().getIdentifikatorverdi())) {
+            builder.add(tilgangsrestriksjon.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

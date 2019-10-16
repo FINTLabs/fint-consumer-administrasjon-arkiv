@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class DokumentfilLinker extends FintLinker<DokumentfilResource> {
         
         return null;
     }
-    
+
+    int[] hashCodes(DokumentfilResource dokumentfil) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(dokumentfil.getSystemId()) && !isEmpty(dokumentfil.getSystemId().getIdentifikatorverdi())) {
+            builder.add(dokumentfil.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

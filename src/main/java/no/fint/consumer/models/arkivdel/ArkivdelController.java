@@ -1,4 +1,4 @@
-package no.fint.consumer.models.dokumenttype;
+package no.fint.consumer.models.arkivdel;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -38,25 +38,25 @@ import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import no.fint.model.resource.administrasjon.arkiv.DokumentTypeResource;
-import no.fint.model.resource.administrasjon.arkiv.DokumentTypeResources;
+import no.fint.model.resource.administrasjon.arkiv.ArkivdelResource;
+import no.fint.model.resource.administrasjon.arkiv.ArkivdelResources;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 
 @Slf4j
-@Api(tags = {"DokumentType"})
+@Api(tags = {"Arkivdel"})
 @CrossOrigin
 @RestController
-@RequestMapping(name = "DokumentType", value = RestEndpoints.DOKUMENTTYPE, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
-public class DokumentTypeController {
+@RequestMapping(name = "Arkivdel", value = RestEndpoints.ARKIVDEL, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+public class ArkivdelController {
 
     @Autowired(required = false)
-    private DokumentTypeCacheService cacheService;
+    private ArkivdelCacheService cacheService;
 
     @Autowired
     private FintAuditService fintAuditService;
 
     @Autowired
-    private DokumentTypeLinker linker;
+    private ArkivdelLinker linker;
 
     @Autowired
     private ConsumerProps props;
@@ -76,7 +76,7 @@ public class DokumentTypeController {
     @GetMapping("/last-updated")
     public Map<String, String> getLastUpdated(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("DokumentType cache is disabled.");
+            throw new CacheDisabledException("Arkivdel cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -88,7 +88,7 @@ public class DokumentTypeController {
     @GetMapping("/cache/size")
      public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
-            throw new CacheDisabledException("DokumentType cache is disabled.");
+            throw new CacheDisabledException("Arkivdel cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -97,12 +97,12 @@ public class DokumentTypeController {
     }
 
     @GetMapping
-    public DokumentTypeResources getDokumentType(
+    public ArkivdelResources getArkivdel(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
             @RequestParam(required = false) Long sinceTimeStamp) {
         if (cacheService == null) {
-            throw new CacheDisabledException("DokumentType cache is disabled.");
+            throw new CacheDisabledException("Arkivdel cache is disabled.");
         }
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
@@ -112,26 +112,26 @@ public class DokumentTypeController {
         }
         log.debug("OrgId: {}, Client: {}", orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTTYPE, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_ARKIVDEL, client);
         event.setOperation(Operation.READ);
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
-        List<DokumentTypeResource> dokumenttype;
+        List<ArkivdelResource> arkivdel;
         if (sinceTimeStamp == null) {
-            dokumenttype = cacheService.getAll(orgId);
+            arkivdel = cacheService.getAll(orgId);
         } else {
-            dokumenttype = cacheService.getAll(orgId, sinceTimeStamp);
+            arkivdel = cacheService.getAll(orgId, sinceTimeStamp);
         }
 
         fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-        return linker.toResources(dokumenttype);
+        return linker.toResources(arkivdel);
     }
 
 
     @GetMapping("/systemid/{id:.+}")
-    public DokumentTypeResource getDokumentTypeBySystemId(
+    public ArkivdelResource getArkivdelBySystemId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client) throws InterruptedException {
@@ -143,7 +143,7 @@ public class DokumentTypeController {
         }
         log.debug("systemId: {}, OrgId: {}, Client: {}", id, orgId, client);
 
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_DOKUMENTTYPE, client);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ARKIVDEL, client);
         event.setOperation(Operation.READ);
         event.setQuery("systemId/" + id);
 
@@ -151,11 +151,11 @@ public class DokumentTypeController {
             fintAuditService.audit(event);
             fintAuditService.audit(event, Status.CACHE);
 
-            Optional<DokumentTypeResource> dokumenttype = cacheService.getDokumentTypeBySystemId(orgId, id);
+            Optional<ArkivdelResource> arkivdel = cacheService.getArkivdelBySystemId(orgId, id);
 
             fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-            return dokumenttype.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
+            return arkivdel.map(linker::toResource).orElseThrow(() -> new EntityNotFoundException(id));
 
         } else {
             BlockingQueue<Event> queue = synchronousEvents.register(event);
@@ -166,11 +166,11 @@ public class DokumentTypeController {
             if (response.getData() == null ||
                     response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
-            DokumentTypeResource dokumenttype = objectMapper.convertValue(response.getData().get(0), DokumentTypeResource.class);
+            ArkivdelResource arkivdel = objectMapper.convertValue(response.getData().get(0), ArkivdelResource.class);
 
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
-            return linker.toResource(dokumenttype);
+            return linker.toResource(arkivdel);
         }    
     }
 

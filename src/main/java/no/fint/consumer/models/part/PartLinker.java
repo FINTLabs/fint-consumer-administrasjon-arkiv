@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class PartLinker extends FintLinker<PartResource> {
         
         return null;
     }
-    
+
+    int[] hashCodes(PartResource part) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(part.getPartId()) && !isEmpty(part.getPartId().getIdentifikatorverdi())) {
+            builder.add(part.getPartId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

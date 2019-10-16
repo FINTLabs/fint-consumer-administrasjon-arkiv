@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class TilknyttetRegistreringSomLinker extends FintLinker<TilknyttetRegist
         
         return null;
     }
-    
+
+    int[] hashCodes(TilknyttetRegistreringSomResource tilknyttetregistreringsom) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(tilknyttetregistreringsom.getSystemId()) && !isEmpty(tilknyttetregistreringsom.getSystemId().getIdentifikatorverdi())) {
+            builder.add(tilknyttetregistreringsom.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 
