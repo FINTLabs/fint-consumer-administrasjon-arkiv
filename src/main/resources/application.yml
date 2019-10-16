@@ -9,6 +9,7 @@ fint:
         part: true
         korrespondansepart: true
         dokumentfil: true
+        sak: true
 spring:
   mvc:
     logResolvedException: false
