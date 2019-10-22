@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.audit.FintAuditService;
+import no.fint.cache.exceptions.CacheNotFoundException;
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -80,7 +81,7 @@ public class SakController {
     }
 
     @GetMapping("/cache/size")
-    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Sak cache is disabled.");
         }
@@ -189,16 +190,14 @@ public class SakController {
             Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
 
             if (response.getData() == null ||
-                    response.getData().isEmpty()) {
-                throw new EntityNotFoundException(id);
-            }
+                    response.getData().isEmpty()) throw new EntityNotFoundException(id);
 
             SakResource sak = objectMapper.convertValue(response.getData().get(0), SakResource.class);
 
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(sak);
-        }
+        }    
     }
 
     @GetMapping("/systemid/{id:.+}")
@@ -242,8 +241,10 @@ public class SakController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(sak);
-        }
+        }    
     }
+
+
 
 
     //
@@ -284,9 +285,9 @@ public class SakController {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ErrorResponse.of(e));
     }
 
-    @ExceptionHandler(InterruptedException.class)
-    public ResponseEntity handlieInterrupted(Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ErrorResponse.of(e));
+    @ExceptionHandler(CacheNotFoundException.class)
+    public ResponseEntity handleCacheNotFound(Exception e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ErrorResponse.of(e));
     }
 
 }

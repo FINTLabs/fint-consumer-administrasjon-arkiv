@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class MerknadstypeLinker extends FintLinker<MerknadstypeResource> {
         
         return null;
     }
-    
+
+    int[] hashCodes(MerknadstypeResource merknadstype) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(merknadstype.getSystemId()) && !isEmpty(merknadstype.getSystemId().getIdentifikatorverdi())) {
+            builder.add(merknadstype.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 

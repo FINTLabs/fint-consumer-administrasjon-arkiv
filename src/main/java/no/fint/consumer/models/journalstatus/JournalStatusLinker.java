@@ -7,6 +7,7 @@ import no.fint.relations.FintLinker;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.stream.IntStream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
@@ -39,6 +40,15 @@ public class JournalStatusLinker extends FintLinker<JournalStatusResource> {
         
         return null;
     }
-    
+
+    int[] hashCodes(JournalStatusResource journalstatus) {
+        IntStream.Builder builder = IntStream.builder();
+        if (!isNull(journalstatus.getSystemId()) && !isEmpty(journalstatus.getSystemId().getIdentifikatorverdi())) {
+            builder.add(journalstatus.getSystemId().getIdentifikatorverdi().hashCode());
+        }
+        
+        return builder.build().toArray();
+    }
+
 }
 
