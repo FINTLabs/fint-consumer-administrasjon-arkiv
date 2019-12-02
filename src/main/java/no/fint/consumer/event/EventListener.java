@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -91,21 +90,16 @@ public class EventListener implements FintEventListener {
             log.debug("Ignoring response status {}", event.getResponseStatus());
             return;
         }
-        String action = event.getAction();
-        List<CacheService> supportedCacheServices = cacheServices.stream().filter(cacheService -> cacheService.supportsAction(action)).collect(Collectors.toList());
-        if (supportedCacheServices.size() > 0) {
-            try {
-                supportedCacheServices.forEach(cacheService -> cacheService.onAction(event));
-                fintAuditService.audit(event, Status.CACHE);
-            } catch (Exception e) {
-                log.debug("Error handling event {} {}", event.getOrgId(), event.getCorrId(), e);
-                event.setMessage(ExceptionUtils.getStackTrace(e));
-                fintAuditService.audit(event, Status.ERROR);
-            }
-        } else {
-            event.setMessage("No Cache Service supports action");
+        try {
+            cacheServices
+                    .stream()
+                    .filter(cacheService -> cacheService.supportsAction(event.getAction()))
+                    .forEach(cacheService -> cacheService.onAction(event));
+            fintAuditService.audit(event, Status.CACHE);
+        } catch (Exception e) {
+            log.debug("Error handling event {} {}", event.getOrgId(), event.getCorrId(), e);
+            event.setMessage(ExceptionUtils.getStackTrace(e));
             fintAuditService.audit(event, Status.ERROR);
-            log.debug("Unhandled event: {}", event);
         }
     }
 

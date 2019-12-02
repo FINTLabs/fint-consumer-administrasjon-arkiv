@@ -13,8 +13,8 @@ buildscript {
 }
 
 plugins {
-    id 'com.github.kt3k.coveralls' version '2.8.4'
-    id 'com.github.ben-manes.versions' version '0.25.0'
+    id 'com.github.kt3k.coveralls' version '2.8.2'
+    id 'com.github.ben-manes.versions' version '0.21.0'
 }
 
 apply plugin: 'java'
@@ -39,8 +39,8 @@ dependencies {
     compile("no.fint:fint-arkiv-model-java:${apiVersion}")
 
     compile('no.fint:fint-api-service-discover:1.1.0')
-    compile('no.fint:fint-audit-mongo-plugin:1.5.0-rc-1')
-    compile('no.fint:fint-cache:2.3.0-alpha-1')
+    compile('no.fint:fint-audit-mongo-plugin:1.6.0')
+    compile('no.fint:fint-cache:2.3.0')
     compile('no.fint:fint-dependencies:0.0.3')
     compile('no.fint:fint-event-model:3.0.0')
     compile('no.fint:fint-events:2.2.0')
