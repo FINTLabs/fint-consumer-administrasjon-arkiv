@@ -1,4 +1,4 @@
-package no.fint.consumer.models.personalmappe;
+package no.fint.consumer.models.klassifikasjonssystem;
 
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,17 +26,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import no.fint.model.administrasjon.arkiv.Personalmappe;
-import no.fint.model.resource.administrasjon.arkiv.PersonalmappeResource;
+import no.fint.model.administrasjon.arkiv.Klassifikasjonssystem;
+import no.fint.model.resource.administrasjon.arkiv.KlassifikasjonssystemResource;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 import no.fint.model.felles.kompleksedatatyper.Identifikator;
 
 @Slf4j
 @Service
-@ConditionalOnProperty(name = "fint.consumer.cache.disabled.personalmappe", havingValue = "false", matchIfMissing = true)
-public class PersonalmappeCacheService extends CacheService<PersonalmappeResource> {
+@ConditionalOnProperty(name = "fint.consumer.cache.disabled.klassifikasjonssystem", havingValue = "false", matchIfMissing = true)
+public class KlassifikasjonssystemCacheService extends CacheService<KlassifikasjonssystemResource> {
 
-    public static final String MODEL = Personalmappe.class.getSimpleName().toLowerCase();
+    public static final String MODEL = Klassifikasjonssystem.class.getSimpleName().toLowerCase();
 
     @Value("${fint.consumer.compatibility.fintresource:true}")
     private boolean checkFintResourceCompatibility;
@@ -51,16 +51,16 @@ public class PersonalmappeCacheService extends CacheService<PersonalmappeResourc
     private ConsumerProps props;
 
     @Autowired
-    private PersonalmappeLinker linker;
+    private KlassifikasjonssystemLinker linker;
 
     private JavaType javaType;
 
     private ObjectMapper objectMapper;
 
-    public PersonalmappeCacheService() {
-        super(MODEL, ArkivActions.GET_ALL_PERSONALMAPPE, ArkivActions.UPDATE_PERSONALMAPPE);
+    public KlassifikasjonssystemCacheService() {
+        super(MODEL, ArkivActions.GET_ALL_KLASSIFIKASJONSSYSTEM, ArkivActions.UPDATE_KLASSIFIKASJONSSYSTEM);
         objectMapper = new ObjectMapper();
-        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, PersonalmappeResource.class);
+        javaType = objectMapper.getTypeFactory().constructCollectionType(List.class, KlassifikasjonssystemResource.class);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
     }
 
@@ -69,7 +69,7 @@ public class PersonalmappeCacheService extends CacheService<PersonalmappeResourc
         props.getAssets().forEach(this::createCache);
     }
 
-    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_PERSONALMAPPE, fixedRateString = Constants.CACHE_FIXEDRATE_PERSONALMAPPE)
+    @Scheduled(initialDelayString = Constants.CACHE_INITIALDELAY_KLASSIFIKASJONSSYSTEM, fixedRateString = Constants.CACHE_FIXEDRATE_KLASSIFIKASJONSSYSTEM)
     public void populateCacheAll() {
         props.getAssets().forEach(this::populateCache);
     }
@@ -81,37 +81,17 @@ public class PersonalmappeCacheService extends CacheService<PersonalmappeResourc
 
     @Override
     public void populateCache(String orgId) {
-		log.info("Populating Personalmappe cache for {}", orgId);
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_PERSONALMAPPE, Constants.CACHE_SERVICE);
+		log.info("Populating Klassifikasjonssystem cache for {}", orgId);
+        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_KLASSIFIKASJONSSYSTEM, Constants.CACHE_SERVICE);
         consumerEventUtil.send(event);
     }
 
 
-    public Optional<PersonalmappeResource> getPersonalmappeByFodselsnummer(String orgId, String fodselsnummer) {
-        return getOne(orgId, fodselsnummer.hashCode(),
-            (resource) -> Optional
-                .ofNullable(resource)
-                .map(PersonalmappeResource::getFodselsnummer)
-                .map(Identifikator::getIdentifikatorverdi)
-                .map(fodselsnummer::equals)
-                .orElse(false));
-    }
-
-    public Optional<PersonalmappeResource> getPersonalmappeByMappeId(String orgId, String mappeId) {
-        return getOne(orgId, mappeId.hashCode(),
-            (resource) -> Optional
-                .ofNullable(resource)
-                .map(PersonalmappeResource::getMappeId)
-                .map(Identifikator::getIdentifikatorverdi)
-                .map(mappeId::equals)
-                .orElse(false));
-    }
-
-    public Optional<PersonalmappeResource> getPersonalmappeBySystemId(String orgId, String systemId) {
+    public Optional<KlassifikasjonssystemResource> getKlassifikasjonssystemBySystemId(String orgId, String systemId) {
         return getOne(orgId, systemId.hashCode(),
             (resource) -> Optional
                 .ofNullable(resource)
-                .map(PersonalmappeResource::getSystemId)
+                .map(KlassifikasjonssystemResource::getSystemId)
                 .map(Identifikator::getIdentifikatorverdi)
                 .map(systemId::equals)
                 .orElse(false));
@@ -120,17 +100,17 @@ public class PersonalmappeCacheService extends CacheService<PersonalmappeResourc
 
 	@Override
     public void onAction(Event event) {
-        List<PersonalmappeResource> data;
+        List<KlassifikasjonssystemResource> data;
         if (checkFintResourceCompatibility && fintResourceCompatibility.isFintResourceData(event.getData())) {
-            log.info("Compatibility: Converting FintResource<PersonalmappeResource> to PersonalmappeResource ...");
-            data = fintResourceCompatibility.convertResourceData(event.getData(), PersonalmappeResource.class);
+            log.info("Compatibility: Converting FintResource<KlassifikasjonssystemResource> to KlassifikasjonssystemResource ...");
+            data = fintResourceCompatibility.convertResourceData(event.getData(), KlassifikasjonssystemResource.class);
         } else {
             data = objectMapper.convertValue(event.getData(), javaType);
         }
         data.forEach(linker::mapLinks);
-        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_PERSONALMAPPE) {
+        if (ArkivActions.valueOf(event.getAction()) == ArkivActions.UPDATE_KLASSIFIKASJONSSYSTEM) {
             if (event.getResponseStatus() == ResponseStatus.ACCEPTED || event.getResponseStatus() == ResponseStatus.CONFLICT) {
-                List<CacheObject<PersonalmappeResource>> cacheObjects = data
+                List<CacheObject<KlassifikasjonssystemResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());
@@ -140,7 +120,7 @@ public class PersonalmappeCacheService extends CacheService<PersonalmappeResourc
                 log.debug("Ignoring payload for {} with response status {}", event.getOrgId(), event.getResponseStatus());
             }
         } else {
-            List<CacheObject<PersonalmappeResource>> cacheObjects = data
+            List<CacheObject<KlassifikasjonssystemResource>> cacheObjects = data
                     .stream()
                     .map(i -> new CacheObject<>(i, linker.hashCodes(i)))
                     .collect(Collectors.toList());

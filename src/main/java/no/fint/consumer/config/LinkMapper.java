@@ -20,6 +20,8 @@ public class LinkMapper {
                 .put(DokumentType.class.getName(), contextPath + RestEndpoints.DOKUMENTTYPE)
                 .put(JournalpostType.class.getName(), contextPath + RestEndpoints.JOURNALPOSTTYPE)
                 .put(JournalStatus.class.getName(), contextPath + RestEndpoints.JOURNALSTATUS)
+				.put(Klasse.class.getName(), contextPath + RestEndpoints.KLASSE)
+				.put(Klassifikasjonssystem.class.getName(), contextPath + RestEndpoints.KLASSIFIKASJONSSYSTEM)
                 .put(Korrespondansepart.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPART)
                 .put(KorrespondansepartType.class.getName(), contextPath + RestEndpoints.KORRESPONDANSEPARTTYPE)
                 .put(Merknadstype.class.getName(), contextPath + RestEndpoints.MERKNADSTYPE)
