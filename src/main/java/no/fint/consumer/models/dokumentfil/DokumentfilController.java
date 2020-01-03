@@ -13,6 +13,7 @@ import no.fint.consumer.event.ConsumerEventUtil;
 import no.fint.consumer.event.SynchronousEvents;
 import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
+import no.fint.consumer.utils.ContentDisposition;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
 import no.fint.event.model.*;
@@ -32,6 +33,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -167,8 +170,15 @@ public class DokumentfilController {
             byte[] decoded = Base64.getDecoder().decode(dokumentfil.getData());
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
+            ContentDisposition contentDisposition = ContentDisposition.builder("attachment")
+                    .filename(dokumentfil.getFilnavn(), StandardCharsets.UTF_8)
+                    .build();
             //return linker.toResource(dokumentfil);
-            return ResponseEntity.status(HttpStatus.OK).header(HttpHeaders.CONTENT_TYPE, dokumentfil.getFormat()).body(decoded);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .header(HttpHeaders.CONTENT_TYPE, dokumentfil.getFormat())
+                    .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
+                    .body(decoded);
         }
     }
 
@@ -222,11 +232,14 @@ public class DokumentfilController {
             @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT) String client,
             @RequestHeader(name = HttpHeaders.CONTENT_TYPE) String format,
+            @RequestHeader(name = HttpHeaders.CONTENT_DISPOSITION) String disposition,
             @RequestBody byte[] body
     ) {
         log.debug("postDokumentfil, OrgId: {}, Client: {}", orgId, client);
+        ContentDisposition contentDisposition = ContentDisposition.parse(disposition);
         DokumentfilResource dokument = new DokumentfilResource();
         dokument.setData(Base64.getEncoder().encodeToString(body));
+        dokument.setFilnavn(contentDisposition.getFilename());
         dokument.setFormat(format);
         linker.mapLinks(dokument);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_DOKUMENTFIL, client);
