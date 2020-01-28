@@ -20,15 +20,14 @@ import no.fint.model.administrasjon.arkiv.ArkivActions;
 import no.fint.model.resource.administrasjon.arkiv.SakResource;
 import no.fint.model.resource.administrasjon.arkiv.SakResources;
 import no.fint.relations.FintRelationsMediaType;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -81,7 +80,7 @@ public class SakController {
     }
 
     @GetMapping("/cache/size")
-     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Sak cache is disabled.");
         }
@@ -95,10 +94,7 @@ public class SakController {
     public SakResources getSak(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp) {
-        if (cacheService == null) {
-            throw new CacheDisabledException("Sak cache is disabled.");
-        }
+            @RequestParam MultiValueMap<String, String> requestParams) throws InterruptedException {
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
         }
@@ -109,46 +105,43 @@ public class SakController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAK, client);
         event.setOperation(Operation.READ);
-        fintAuditService.audit(event);
-        fintAuditService.audit(event, Status.CACHE);
+        if (!requestParams.isEmpty()) {
+            event.setQuery(UriComponentsBuilder.newInstance().queryParams(requestParams).toUriString());
+        }
 
-        List<SakResource> sak;
-        if (sinceTimeStamp == null) {
-            sak = cacheService.getAll(orgId);
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
+
+            List<SakResource> sak;
+            if (requestParams.containsKey("sinceTimeStamp")) {
+                sak = cacheService.getAll(orgId, Long.parseLong(requestParams.getFirst("sinceTimeStamp")));
+            } else {
+                sak = cacheService.getAll(orgId);
+            }
+
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return linker.toResources(sak);
+
         } else {
-            sak = cacheService.getAll(orgId, sinceTimeStamp);
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            List<SakResource> resources = objectMapper.convertValue(response.getData(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, SakResource.class));
+
+            fintAuditService.audit(event, Status.SENT_TO_CLIENT);
+
+            return linker.toResources(resources);
+
         }
-
-        fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
-
-        return linker.toResources(sak);
-    }
-
-    @GetMapping("/search")
-    public SakResources searchSak(
-            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
-            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            HttpServletRequest request
-    ) throws InterruptedException {
-        if (StringUtils.isBlank(request.getQueryString())) {
-            throw new BadRequestException("Invalid query");
-        }
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_SAK, client);
-        event.setQuery("?" + request.getQueryString());
-        event.setOperation(Operation.READ);
-        BlockingQueue<Event> queue = synchronousEvents.register(event);
-        consumerEventUtil.send(event);
-
-        Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
-
-        List<SakResource> resources = objectMapper.convertValue(response.getData(),
-                objectMapper.getTypeFactory().constructCollectionType(List.class, SakResource.class));
-
-        return linker.toResources(resources);
     }
 
     @GetMapping("/mappeid/{ar}/{sekvensnummer}")
-    public SakResource getTilskuddFartoyByMappeArSekvensnummer(
+    public SakResource getSakByMappeArSekvensnummer(
             @PathVariable String ar,
             @PathVariable String sekvensnummer,
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
@@ -197,7 +190,7 @@ public class SakController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(sak);
-        }    
+        }
     }
 
     @GetMapping("/systemid/{id:.+}")
@@ -241,9 +234,8 @@ public class SakController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(sak);
-        }    
+        }
     }
-
 
 
     // Writable class
@@ -260,7 +252,11 @@ public class SakController {
         log.debug("Event: {}", event);
         log.trace("Data: {}", event.getData());
         if (!event.getOrgId().equals(orgId)) {
-            return ResponseEntity.badRequest().body(new EventResponse() { { setMessage("Invalid OrgId"); } } );
+            return ResponseEntity.badRequest().body(new EventResponse() {
+                {
+                    setMessage("Invalid OrgId");
+                }
+            });
         }
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
@@ -316,7 +312,7 @@ public class SakController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
 
-  
+
     @PutMapping("/mappeid/{id:.+}")
     public ResponseEntity putSakByMappeId(
             @PathVariable String id,
@@ -340,7 +336,7 @@ public class SakController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
     @PutMapping("/systemid/{id:.+}")
     public ResponseEntity putSakBySystemId(
             @PathVariable String id,
@@ -364,7 +360,7 @@ public class SakController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
 
     //
     // Exception handlers
@@ -372,6 +368,11 @@ public class SakController {
     @ExceptionHandler(EventResponseException.class)
     public ResponseEntity handleEventResponseException(EventResponseException e) {
         return ResponseEntity.status(e.getStatus()).body(e.getResponse());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity handleBadRequestException(BadRequestException e) {
+        return ResponseEntity.badRequest().body(ErrorResponse.of(e));
     }
 
     @ExceptionHandler(UpdateEntityMismatchException.class)
