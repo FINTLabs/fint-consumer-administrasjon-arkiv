@@ -40,7 +40,7 @@ spec:
     spec:
       containers:
         - name: consumer-administrasjon-arkiv
-          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:PR-9.2
+          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.55
           envFrom:
             - configMapRef:
                 name: fint-environment
@@ -53,6 +53,8 @@ spec:
             - {name: fint.hazelcast.kubernetes.labelValue, value: administrasjon-arkiv}
             - {name: fint.cache.packer, value: DEFLATE}
             - {name: server.context-path, value: /administrasjon/arkiv}
+            - {name: fint.consumer.cache.disabled.sak, value: "true"}
+            - {name: logging.level.no.fint.consumer.models.arkivressurs.ArkivressursController, value: TRACE}
           ports:
             - {containerPort: 8080}
           readinessProbe:
