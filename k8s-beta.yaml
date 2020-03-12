@@ -58,7 +58,12 @@ spec:
             - {name: server.context-path, value: /administrasjon/arkiv}
             - name: logging.level.no.fint.consumer.models.arkivressurs.ArkivressursController
               value: TRACE
-          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.48
+          envFrom:
+            - configMapRef:
+                name: fint-environment
+            - secretRef:
+                name: fint-events-azure-eventhub
+          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.55
           name: consumer-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
@@ -104,7 +109,12 @@ spec:
             - {name: fint.provider.max-number-of-emitters, value: '5'}
             - {name: server.context-path, value: /administrasjon/arkiv/provider}
             - {name: fint.provider.assets.endpoint, value: 'https://admin.fintlabs.no/api/components/assets/administrasjon_arkiv'}
-          image: fintlabs.azurecr.io/provider:2.2.0
+          envFrom:
+            - configMapRef:
+                name: fint-environment
+            - secretRef:
+                name: fint-events-azure-eventhub
+          image: fintlabs.azurecr.io/provider:2.3.0-alpha-2
           name: provider-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
