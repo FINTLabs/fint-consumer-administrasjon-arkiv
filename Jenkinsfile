@@ -1,6 +1,6 @@
 pipeline {
     parameters {
-        string(name: 'BUILD_FLAGS', defaultValue: '', description: 'Gradle build flags')
+        string(name: 'BUILD_FLAGS', defaultValue: '-Peventhub', description: 'Gradle build flags')
     }
     agent { label 'docker' }
     stages {
