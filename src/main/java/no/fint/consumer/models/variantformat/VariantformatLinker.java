@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class VariantformatLinker extends FintLinker<VariantformatResource> {
@@ -34,11 +34,17 @@ public class VariantformatLinker extends FintLinker<VariantformatResource> {
 
     @Override
     public String getSelfHref(VariantformatResource variantformat) {
+        return getAllSelfHrefs(variantformat).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(VariantformatResource variantformat) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(variantformat.getSystemId()) && !isEmpty(variantformat.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(variantformat.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(variantformat.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(VariantformatResource variantformat) {

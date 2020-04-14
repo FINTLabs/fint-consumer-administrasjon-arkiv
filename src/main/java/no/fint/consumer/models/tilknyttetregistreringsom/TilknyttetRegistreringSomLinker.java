@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class TilknyttetRegistreringSomLinker extends FintLinker<TilknyttetRegistreringSomResource> {
@@ -34,11 +34,17 @@ public class TilknyttetRegistreringSomLinker extends FintLinker<TilknyttetRegist
 
     @Override
     public String getSelfHref(TilknyttetRegistreringSomResource tilknyttetregistreringsom) {
+        return getAllSelfHrefs(tilknyttetregistreringsom).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(TilknyttetRegistreringSomResource tilknyttetregistreringsom) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(tilknyttetregistreringsom.getSystemId()) && !isEmpty(tilknyttetregistreringsom.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(tilknyttetregistreringsom.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(tilknyttetregistreringsom.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(TilknyttetRegistreringSomResource tilknyttetregistreringsom) {

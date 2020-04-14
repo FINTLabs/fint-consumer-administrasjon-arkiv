@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class DokumentTypeLinker extends FintLinker<DokumentTypeResource> {
@@ -34,11 +34,17 @@ public class DokumentTypeLinker extends FintLinker<DokumentTypeResource> {
 
     @Override
     public String getSelfHref(DokumentTypeResource dokumenttype) {
+        return getAllSelfHrefs(dokumenttype).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(DokumentTypeResource dokumenttype) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(dokumenttype.getSystemId()) && !isEmpty(dokumenttype.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(dokumenttype.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(dokumenttype.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(DokumentTypeResource dokumenttype) {
