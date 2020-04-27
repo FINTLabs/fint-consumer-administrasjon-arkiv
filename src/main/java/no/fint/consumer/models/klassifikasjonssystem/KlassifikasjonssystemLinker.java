@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class KlassifikasjonssystemLinker extends FintLinker<KlassifikasjonssystemResource> {
@@ -34,11 +34,17 @@ public class KlassifikasjonssystemLinker extends FintLinker<Klassifikasjonssyste
 
     @Override
     public String getSelfHref(KlassifikasjonssystemResource klassifikasjonssystem) {
+        return getAllSelfHrefs(klassifikasjonssystem).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(KlassifikasjonssystemResource klassifikasjonssystem) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(klassifikasjonssystem.getSystemId()) && !isEmpty(klassifikasjonssystem.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(klassifikasjonssystem.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(klassifikasjonssystem.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(KlassifikasjonssystemResource klassifikasjonssystem) {
