@@ -22,6 +22,7 @@ import no.fint.event.model.*;
 
 import no.fint.relations.FintRelationsMediaType;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,6 +42,8 @@ import java.util.concurrent.TimeUnit;
 import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
 import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @Api(tags = {"Korrespondansepart"})
@@ -100,7 +103,8 @@ public class KorrespondansepartController {
     public KorrespondansepartResources getKorrespondansepart(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp) {
+            @RequestParam(required = false) Long sinceTimeStamp,
+            HttpServletRequest request) throws InterruptedException {
         if (cacheService == null) {
             throw new CacheDisabledException("Korrespondansepart cache is disabled.");
         }
@@ -114,42 +118,38 @@ public class KorrespondansepartController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_KORRESPONDANSEPART, client);
         event.setOperation(Operation.READ);
-        fintAuditService.audit(event);
-        fintAuditService.audit(event, Status.CACHE);
-
-        List<KorrespondansepartResource> korrespondansepart;
-        if (sinceTimeStamp == null) {
-            korrespondansepart = cacheService.getAll(orgId);
-        } else {
-            korrespondansepart = cacheService.getAll(orgId, sinceTimeStamp);
+        if (StringUtils.isNotBlank(request.getQueryString())) {
+            event.setQuery("?" + request.getQueryString());
         }
-
-        fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
-
-        return linker.toResources(korrespondansepart);
-    }
-
-    @GetMapping("/search")
-    public KorrespondansepartResources searchKorrespondansepart(
-            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
-            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            HttpServletRequest request
-    ) throws InterruptedException {
-        if (StringUtils.isBlank(request.getQueryString())) {
-            throw new BadRequestException("Invalid query");
-        }
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
-        event.setQuery("?" + request.getQueryString());
         event.setOperation(Operation.READ);
-        BlockingQueue<Event> queue = synchronousEvents.register(event);
-        consumerEventUtil.send(event);
 
-        Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
 
-        List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
-                objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
+            List<KorrespondansepartResource> korrespondansepart;
+            if (sinceTimeStamp == null) {
+                korrespondansepart = cacheService.getAll(orgId);
+            } else {
+                korrespondansepart = cacheService.getAll(orgId, sinceTimeStamp);
+            }
 
-        return linker.toResources(resources);
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return linker.toResources(korrespondansepart);
+
+        } else {
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
+
+            return linker.toResources(resources);
+
+        }
     }
 
 
