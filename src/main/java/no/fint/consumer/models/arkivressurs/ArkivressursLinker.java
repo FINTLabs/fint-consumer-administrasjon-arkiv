@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class ArkivressursLinker extends FintLinker<ArkivressursResource> {
@@ -34,14 +34,20 @@ public class ArkivressursLinker extends FintLinker<ArkivressursResource> {
 
     @Override
     public String getSelfHref(ArkivressursResource arkivressurs) {
+        return getAllSelfHrefs(arkivressurs).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(ArkivressursResource arkivressurs) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(arkivressurs.getKildesystemId()) && !isEmpty(arkivressurs.getKildesystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(arkivressurs.getKildesystemId().getIdentifikatorverdi(), "kildesystemid");
+            builder.add(createHrefWithId(arkivressurs.getKildesystemId().getIdentifikatorverdi(), "kildesystemid"));
         }
         if (!isNull(arkivressurs.getSystemId()) && !isEmpty(arkivressurs.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(arkivressurs.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(arkivressurs.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(ArkivressursResource arkivressurs) {

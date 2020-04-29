@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class TilgangsrestriksjonLinker extends FintLinker<TilgangsrestriksjonResource> {
@@ -34,11 +34,17 @@ public class TilgangsrestriksjonLinker extends FintLinker<TilgangsrestriksjonRes
 
     @Override
     public String getSelfHref(TilgangsrestriksjonResource tilgangsrestriksjon) {
+        return getAllSelfHrefs(tilgangsrestriksjon).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(TilgangsrestriksjonResource tilgangsrestriksjon) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(tilgangsrestriksjon.getSystemId()) && !isEmpty(tilgangsrestriksjon.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(tilgangsrestriksjon.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(tilgangsrestriksjon.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(TilgangsrestriksjonResource tilgangsrestriksjon) {

@@ -93,7 +93,7 @@ public class ArkivressursController {
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
         }
-        return ImmutableMap.of("size", cacheService.getAll(orgId).size());
+        return ImmutableMap.of("size", cacheService.getCacheSize(orgId));
     }
 
     @GetMapping
@@ -239,25 +239,27 @@ public class ArkivressursController {
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
         }
-        List<ArkivressursResource> result;
+        ArkivressursResource result;
         switch (event.getResponseStatus()) {
             case ACCEPTED:
                 if (event.getOperation() == Operation.VALIDATE) {
                     fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                     return ResponseEntity.ok(event.getResponse());
                 }
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArkivressursResource.class));
-                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result.get(0))).build().toUri();
+                result = objectMapper.convertValue(event.getData().get(0), ArkivressursResource.class);
+                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result)).build().toUri();
                 event.setMessage(location.toString());
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
+                if (props.isUseCreated())
+                    return ResponseEntity.created(location).body(linker.toResource(result));
+                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).body(linker.toResource(result));
             case ERROR:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(event.getResponse());
             case CONFLICT:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, ArkivressursResource.class));
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResources(result));
+                result = objectMapper.convertValue(event.getData().get(0), ArkivressursResource.class);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResource(result));
             case REJECTED:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                 return ResponseEntity.badRequest().body(event.getResponse());
@@ -277,11 +279,7 @@ public class ArkivressursController {
         linker.mapLinks(body);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_ARKIVRESSURS, client);
         event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
-        event.setOperation(Operation.CREATE);
-        if (validate) {
-            event.setQuery("VALIDATE");
-            event.setOperation(Operation.VALIDATE);
-        }
+        event.setOperation(validate ? Operation.VALIDATE : Operation.CREATE);
         consumerEventUtil.send(event);
 
         statusCache.put(event.getCorrId(), event);

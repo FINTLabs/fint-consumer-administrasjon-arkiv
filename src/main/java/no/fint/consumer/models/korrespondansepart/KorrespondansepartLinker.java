@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class KorrespondansepartLinker extends FintLinker<KorrespondansepartResource> {
@@ -34,17 +34,23 @@ public class KorrespondansepartLinker extends FintLinker<KorrespondansepartResou
 
     @Override
     public String getSelfHref(KorrespondansepartResource korrespondansepart) {
+        return getAllSelfHrefs(korrespondansepart).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(KorrespondansepartResource korrespondansepart) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(korrespondansepart.getFodselsnummer()) && !isEmpty(korrespondansepart.getFodselsnummer().getIdentifikatorverdi())) {
-            return createHrefWithId(korrespondansepart.getFodselsnummer().getIdentifikatorverdi(), "fodselsnummer");
+            builder.add(createHrefWithId(korrespondansepart.getFodselsnummer().getIdentifikatorverdi(), "fodselsnummer"));
         }
         if (!isNull(korrespondansepart.getOrganisasjonsnummer()) && !isEmpty(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi())) {
-            return createHrefWithId(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi(), "organisasjonsnummer");
+            builder.add(createHrefWithId(korrespondansepart.getOrganisasjonsnummer().getIdentifikatorverdi(), "organisasjonsnummer"));
         }
         if (!isNull(korrespondansepart.getSystemId()) && !isEmpty(korrespondansepart.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(korrespondansepart.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(korrespondansepart.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(KorrespondansepartResource korrespondansepart) {

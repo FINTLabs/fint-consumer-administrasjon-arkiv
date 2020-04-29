@@ -5,8 +5,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
+
 import no.fint.audit.FintAuditService;
-import no.fint.cache.exceptions.CacheNotFoundException;
+
+import no.fint.cache.exceptions.*;
 import no.fint.consumer.config.Constants;
 import no.fint.consumer.config.ConsumerProps;
 import no.fint.consumer.event.ConsumerEventUtil;
@@ -15,11 +17,11 @@ import no.fint.consumer.exceptions.*;
 import no.fint.consumer.status.StatusCache;
 import no.fint.consumer.utils.EventResponses;
 import no.fint.consumer.utils.RestEndpoints;
+
 import no.fint.event.model.*;
-import no.fint.model.administrasjon.arkiv.ArkivActions;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
-import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
+
 import no.fint.relations.FintRelationsMediaType;
+
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,14 +30,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.net.UnknownHostException;
+import java.net.URI;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResource;
+import no.fint.model.resource.administrasjon.arkiv.KorrespondansepartResources;
+import no.fint.model.administrasjon.arkiv.ArkivActions;
+
+import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @Api(tags = {"Korrespondansepart"})
@@ -88,14 +96,15 @@ public class KorrespondansepartController {
         if (props.isOverrideOrgId() || orgId == null) {
             orgId = props.getDefaultOrgId();
         }
-        return ImmutableMap.of("size", cacheService.getAll(orgId).size());
+        return ImmutableMap.of("size", cacheService.getCacheSize(orgId));
     }
 
     @GetMapping
     public KorrespondansepartResources getKorrespondansepart(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp) {
+            @RequestParam(required = false) Long sinceTimeStamp,
+            HttpServletRequest request) throws InterruptedException {
         if (cacheService == null) {
             throw new CacheDisabledException("Korrespondansepart cache is disabled.");
         }
@@ -109,42 +118,38 @@ public class KorrespondansepartController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_KORRESPONDANSEPART, client);
         event.setOperation(Operation.READ);
-        fintAuditService.audit(event);
-        fintAuditService.audit(event, Status.CACHE);
-
-        List<KorrespondansepartResource> korrespondansepart;
-        if (sinceTimeStamp == null) {
-            korrespondansepart = cacheService.getAll(orgId);
-        } else {
-            korrespondansepart = cacheService.getAll(orgId, sinceTimeStamp);
+        if (StringUtils.isNotBlank(request.getQueryString())) {
+            event.setQuery("?" + request.getQueryString());
         }
-
-        fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
-
-        return linker.toResources(korrespondansepart);
-    }
-
-    @GetMapping("/search")
-    public KorrespondansepartResources searchKorrespondansepart(
-            @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
-            @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            HttpServletRequest request
-    ) throws InterruptedException {
-        if (StringUtils.isBlank(request.getQueryString())) {
-            throw new BadRequestException("Invalid query");
-        }
-        Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_KORRESPONDANSEPART, client);
-        event.setQuery("?" + request.getQueryString());
         event.setOperation(Operation.READ);
-        BlockingQueue<Event> queue = synchronousEvents.register(event);
-        consumerEventUtil.send(event);
 
-        Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+        if (cacheService != null) {
+            fintAuditService.audit(event);
+            fintAuditService.audit(event, Status.CACHE);
 
-        List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
-                objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
+            List<KorrespondansepartResource> korrespondansepart;
+            if (sinceTimeStamp == null) {
+                korrespondansepart = cacheService.getAll(orgId);
+            } else {
+                korrespondansepart = cacheService.getAll(orgId, sinceTimeStamp);
+            }
 
-        return linker.toResources(resources);
+            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+            return linker.toResources(korrespondansepart);
+
+        } else {
+            BlockingQueue<Event> queue = synchronousEvents.register(event);
+            consumerEventUtil.send(event);
+
+            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
+
+            List<KorrespondansepartResource> resources = objectMapper.convertValue(response.getData(),
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
+
+            return linker.toResources(resources);
+
+        }
     }
 
 
@@ -282,6 +287,7 @@ public class KorrespondansepartController {
 
 
 
+    // Writable class
     @GetMapping("/status/{id}")
     public ResponseEntity getStatus(
             @PathVariable String id,
@@ -300,25 +306,27 @@ public class KorrespondansepartController {
         if (event.getResponseStatus() == null) {
             return ResponseEntity.status(HttpStatus.ACCEPTED).build();
         }
-        List<KorrespondansepartResource> result;
+        KorrespondansepartResource result;
         switch (event.getResponseStatus()) {
             case ACCEPTED:
                 if (event.getOperation() == Operation.VALIDATE) {
                     fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                     return ResponseEntity.ok(event.getResponse());
                 }
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
-                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result.get(0))).build().toUri();
+                result = objectMapper.convertValue(event.getData().get(0), KorrespondansepartResource.class);
+                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result)).build().toUri();
                 event.setMessage(location.toString());
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
+                if (props.isUseCreated())
+                    return ResponseEntity.created(location).body(linker.toResource(result));
+                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).body(linker.toResource(result));
             case ERROR:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(event.getResponse());
             case CONFLICT:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                result = objectMapper.convertValue(event.getData(), objectMapper.getTypeFactory().constructCollectionType(List.class, KorrespondansepartResource.class));
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResources(result));
+                result = objectMapper.convertValue(event.getData().get(0), KorrespondansepartResource.class);
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResource(result));
             case REJECTED:
                 fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                 return ResponseEntity.badRequest().body(event.getResponse());
@@ -338,11 +346,7 @@ public class KorrespondansepartController {
         linker.mapLinks(body);
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.UPDATE_KORRESPONDANSEPART, client);
         event.addObject(objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS).convertValue(body, Map.class));
-        event.setOperation(Operation.CREATE);
-        if (validate) {
-            event.setQuery("VALIDATE");
-            event.setOperation(Operation.VALIDATE);
-        }
+        event.setOperation(validate ? Operation.VALIDATE : Operation.CREATE);
         consumerEventUtil.send(event);
 
         statusCache.put(event.getCorrId(), event);

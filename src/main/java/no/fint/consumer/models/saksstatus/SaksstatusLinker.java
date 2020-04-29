@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static org.springframework.util.StringUtils.isEmpty;
-
 
 @Component
 public class SaksstatusLinker extends FintLinker<SaksstatusResource> {
@@ -34,11 +34,17 @@ public class SaksstatusLinker extends FintLinker<SaksstatusResource> {
 
     @Override
     public String getSelfHref(SaksstatusResource saksstatus) {
+        return getAllSelfHrefs(saksstatus).findFirst().orElse(null);
+    }
+
+    @Override
+    public Stream<String> getAllSelfHrefs(SaksstatusResource saksstatus) {
+        Stream.Builder<String> builder = Stream.builder();
         if (!isNull(saksstatus.getSystemId()) && !isEmpty(saksstatus.getSystemId().getIdentifikatorverdi())) {
-            return createHrefWithId(saksstatus.getSystemId().getIdentifikatorverdi(), "systemid");
+            builder.add(createHrefWithId(saksstatus.getSystemId().getIdentifikatorverdi(), "systemid"));
         }
         
-        return null;
+        return builder.build();
     }
 
     int[] hashCodes(SaksstatusResource saksstatus) {
