@@ -29,7 +29,7 @@ class RequestHeaderInterceptorSpec extends Specification {
         props = Mock()
         controller = new AdministrativEnhetController(fintAuditService: Mock(FintAuditService), cacheService: cacheService, linker: linker, props: props)
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
-                .addInterceptors(new RequestHeaderInterceptor('x-fint-access-collection'))
+                .addInterceptors(new RequestHeaderInterceptor())
                 .build()
     }
 

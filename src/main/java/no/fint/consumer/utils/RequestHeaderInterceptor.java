@@ -7,15 +7,14 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Arrays;
 
 @Slf4j
 public class RequestHeaderInterceptor extends HandlerInterceptorAdapter {
 
-    private final String headerName;
-
-    public RequestHeaderInterceptor(String headerName) {
-        this.headerName = headerName;
-    }
+    private final String collectionHeaderName = "x-fint-access-collection";
+    private final String readHeaderName = "x-fint-access-read";
+    private final String modifyHeaderName = "x-fint-access-modify";
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -23,15 +22,32 @@ public class RequestHeaderInterceptor extends HandlerInterceptorAdapter {
         Dummy logic for testing purposes... implement some clever hackaton logic with request headers, uri etc.
          */
 
-        // TODO How to distinguish between collection access and single access?  By counting number of path elements?
+        if (StringUtils.equalsAny(request.getMethod(), "GET", "HEAD")) {
 
-        String header = request.getHeader(headerName);
-        final String[] permittedPaths = StringUtils.split(header, ",;");
+            if (StringUtils.endsWithAny(request.getRequestURI(), RestEndpoints.ALL_ENDPOINTS)) {
 
-        if (StringUtils.startsWithAny(request.getRequestURI(), permittedPaths)) {
-            return true;
+                final String[] permittedPaths = StringUtils.split(request.getHeader(collectionHeaderName), ",;");
+
+                if (StringUtils.equalsAny(request.getRequestURI(), permittedPaths)) {
+                    return true;
+                }
+
+            } else {
+
+                final String[] permittedPaths = StringUtils.split(request.getHeader(readHeaderName), ",;");
+
+                if (StringUtils.startsWithAny(request.getRequestURI(), permittedPaths)) {
+                    return true;
+                }
+            }
+
+        } else {
+            String[] permittedPaths = StringUtils.split(request.getHeader(modifyHeaderName), ",;");
+            if (StringUtils.startsWithAny(request.getRequestURI(), permittedPaths)) {
+                return true;
+            }
+
         }
-
         throw new ForbiddenException();
     }
 }

@@ -66,7 +66,7 @@ class SakControllerSpec extends Specification {
                 get('/sak/mappeid/2020/42')
                         .header('x-org-id', 'test.org')
                         .header('x-client', 'Spock')
-                        .header('x-fint-access-collection', RestEndpoints.SAK))
+                        .header('x-fint-access-read', RestEndpoints.SAK))
 
         then:
         response.andExpect(status().is2xxSuccessful()).andExpect(jsonPath('$.tittel').value(equalTo('Spock')))
