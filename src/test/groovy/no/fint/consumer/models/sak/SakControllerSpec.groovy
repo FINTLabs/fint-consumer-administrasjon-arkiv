@@ -2,6 +2,7 @@ package no.fint.consumer.models.sak
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import no.fint.consumer.event.SynchronousEvents
+import no.fint.consumer.utils.RestEndpoints
 import no.fint.event.model.Event
 import org.spockframework.spring.SpringBean
 import org.springframework.beans.factory.annotation.Autowired
@@ -64,7 +65,8 @@ class SakControllerSpec extends Specification {
         def response = mockMvc.perform(
                 get('/sak/mappeid/2020/42')
                         .header('x-org-id', 'test.org')
-                        .header('x-client', 'Spock'))
+                        .header('x-client', 'Spock')
+                        .header('x-fint-access-collection', RestEndpoints.SAK))
 
         then:
         response.andExpect(status().is2xxSuccessful()).andExpect(jsonPath('$.tittel').value(equalTo('Spock')))
