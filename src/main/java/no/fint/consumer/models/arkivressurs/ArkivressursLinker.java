@@ -1,6 +1,5 @@
 package no.fint.consumer.models.arkivressurs;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.ArkivressursResource;
 import no.fint.model.resource.administrasjon.arkiv.ArkivressursResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class ArkivressursLinker extends FintLinker<ArkivressursResource> {
 
     @Override
     public ArkivressursResources toResources(Collection<ArkivressursResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public ArkivressursResources toResources(Stream<ArkivressursResource> stream, int offset, int size, int totalItems) {
         ArkivressursResources resources = new ArkivressursResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

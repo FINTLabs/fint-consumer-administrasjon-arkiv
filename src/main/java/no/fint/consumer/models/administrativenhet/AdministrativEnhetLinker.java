@@ -1,6 +1,5 @@
 package no.fint.consumer.models.administrativenhet;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.AdministrativEnhetResource;
 import no.fint.model.resource.administrasjon.arkiv.AdministrativEnhetResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class AdministrativEnhetLinker extends FintLinker<AdministrativEnhetResou
 
     @Override
     public AdministrativEnhetResources toResources(Collection<AdministrativEnhetResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public AdministrativEnhetResources toResources(Stream<AdministrativEnhetResource> stream, int offset, int size, int totalItems) {
         AdministrativEnhetResources resources = new AdministrativEnhetResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

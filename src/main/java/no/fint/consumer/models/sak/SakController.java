@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import no.fint.audit.FintAuditService;
 
@@ -22,7 +23,6 @@ import no.fint.event.model.*;
 
 import no.fint.relations.FintRelationsMediaType;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,20 +30,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.UnknownHostException;
 import java.net.URI;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import no.fint.model.resource.administrasjon.arkiv.SakResource;
 import no.fint.model.resource.administrasjon.arkiv.SakResources;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
-
-import javax.servlet.http.HttpServletRequest;
 
 @Slf4j
 @Api(tags = {"Sak"})
@@ -89,7 +88,7 @@ public class SakController {
     }
 
     @GetMapping("/cache/size")
-     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Sak cache is disabled.");
         }
@@ -103,8 +102,10 @@ public class SakController {
     public SakResources getSak(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp,
-            HttpServletRequest httpServletRequest) throws InterruptedException {
+            @RequestParam(defaultValue = "0") long sinceTimeStamp,
+            @RequestParam(defaultValue = "0") int size,
+            @RequestParam(defaultValue = "0") int offset,
+            HttpServletRequest request) {
         if (cacheService == null) {
             throw new CacheDisabledException("Sak cache is disabled.");
         }
@@ -118,39 +119,26 @@ public class SakController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_SAK, client);
         event.setOperation(Operation.READ);
-        if (StringUtils.isNotBlank(httpServletRequest.getQueryString())) {
-            event.setQuery("?" + httpServletRequest.getQueryString());
+        if (StringUtils.isNotBlank(request.getQueryString())) {
+            event.setQuery("?" + request.getQueryString());
         }
+        fintAuditService.audit(event);
+        fintAuditService.audit(event, Status.CACHE);
 
-        if (cacheService != null) {
-
-            fintAuditService.audit(event);
-            fintAuditService.audit(event, Status.CACHE);
-
-            List<SakResource> sak;
-            if (sinceTimeStamp == null) {
-                sak = cacheService.getAll(orgId);
-            } else {
-                sak = cacheService.getAll(orgId, sinceTimeStamp);
-            }
-
-            fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
-
-            return linker.toResources(sak);
-
+        Stream<SakResource> resources;
+        if (size > 0 && offset >= 0 && sinceTimeStamp > 0) {
+            resources = cacheService.streamSliceSince(orgId, sinceTimeStamp, offset, size);
+        } else if (size > 0 && offset >= 0) {
+            resources = cacheService.streamSlice(orgId, offset, size);
+        } else if (sinceTimeStamp > 0) {
+            resources = cacheService.streamSince(orgId, sinceTimeStamp);
         } else {
-            BlockingQueue<Event> queue = synchronousEvents.register(event);
-            consumerEventUtil.send(event);
-
-            Event response = EventResponses.handle(queue.poll(5, TimeUnit.MINUTES));
-
-            List<SakResource> resources = objectMapper.convertValue(response.getData(),
-                    objectMapper.getTypeFactory().constructCollectionType(List.class, SakResource.class));
-
-            fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-
-            return linker.toResources(resources);
+            resources = cacheService.streamAll(orgId);
         }
+
+        fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
+
+        return linker.toResources(resources, offset, size, cacheService.getCacheSize(orgId));
     }
 
 

@@ -1,6 +1,5 @@
 package no.fint.consumer.models.partrolle;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.PartRolleResource;
 import no.fint.model.resource.administrasjon.arkiv.PartRolleResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class PartRolleLinker extends FintLinker<PartRolleResource> {
 
     @Override
     public PartRolleResources toResources(Collection<PartRolleResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public PartRolleResources toResources(Stream<PartRolleResource> stream, int offset, int size, int totalItems) {
         PartRolleResources resources = new PartRolleResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 
