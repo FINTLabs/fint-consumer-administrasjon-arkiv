@@ -7,47 +7,54 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
+import java.util.Collection;
 
 @Slf4j
 public class RequestHeaderInterceptor extends HandlerInterceptorAdapter {
 
-    private final String collectionHeaderName = "x-fint-access-collection";
-    private final String readHeaderName = "x-fint-access-read";
-    private final String modifyHeaderName = "x-fint-access-modify";
+    private static final String COLLECTION_HEADER_NAME = "x-fint-access-collection";
+    private static final String READ_HEADER_NAME = "x-fint-access-read";
+    private static final String MODIFY_HEADER_NAME = "x-fint-access-modify";
+    private final Collection<String> paths;
+
+    public RequestHeaderInterceptor(Collection<String> paths) {
+        this.paths = paths;
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        /*
-        Dummy logic for testing purposes... implement some clever hackaton logic with request headers, uri etc.
-         */
+        log.trace("{} {}", request.getMethod(), request.getRequestURI());
 
         if (StringUtils.equalsAny(request.getMethod(), "GET", "HEAD")) {
 
-            if (StringUtils.endsWithAny(request.getRequestURI(), RestEndpoints.ALL_ENDPOINTS)) {
+            if (paths.contains(StringUtils.lowerCase(request.getRequestURI()))) {
 
-                final String[] permittedPaths = StringUtils.split(request.getHeader(collectionHeaderName), ",;");
+                final String[] permittedPaths = StringUtils.split(request.getHeader(COLLECTION_HEADER_NAME), ",;");
 
                 if (StringUtils.equalsAny(request.getRequestURI(), permittedPaths)) {
                     return true;
                 }
 
-            } else {
+            } else if (paths.stream().anyMatch(s -> StringUtils.startsWith(request.getRequestURI(), s))) {
 
-                final String[] permittedPaths = StringUtils.split(request.getHeader(readHeaderName), ",;");
+                final String[] permittedPaths = StringUtils.split(request.getHeader(READ_HEADER_NAME), ",;");
 
                 if (StringUtils.startsWithAny(request.getRequestURI(), permittedPaths)) {
                     return true;
                 }
+            } else {
+                log.debug("{} {} not matched", request.getMethod(), request.getRequestURI());
+                return true;
             }
 
         } else {
-            String[] permittedPaths = StringUtils.split(request.getHeader(modifyHeaderName), ",;");
+            String[] permittedPaths = StringUtils.split(request.getHeader(MODIFY_HEADER_NAME), ",;");
             if (StringUtils.startsWithAny(request.getRequestURI(), permittedPaths)) {
                 return true;
             }
 
         }
+        log.debug("{} {} rejected", request.getMethod(), request.getRequestURI());
         throw new ForbiddenException();
     }
 }

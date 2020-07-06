@@ -1,7 +1,5 @@
 package no.fint.consumer.utils;
 
-import java.util.Set;
-
 public enum RestEndpoints {
     ;
 
@@ -31,30 +29,4 @@ public enum RestEndpoints {
     public static final String TILKNYTTETREGISTRERINGSOM = "/tilknyttetregistreringsom";
     public static final String VARIANTFORMAT = "/variantformat";
 
-    public static final String[] ALL_ENDPOINTS = new String[]{
-            ADMINISTRATIVENHET,
-            ARKIVDEL,
-            ARKIVRESSURS,
-            AUTORISASJON,
-            DOKUMENTFIL,
-            DOKUMENTSTATUS,
-            DOKUMENTTYPE,
-            JOURNALPOSTTYPE,
-            JOURNALSTATUS,
-            KLASSE,
-            KLASSIFIKASJONSSYSTEM,
-            KORRESPONDANSEPART,
-            KORRESPONDANSEPARTTYPE,
-            MERKNADSTYPE,
-            PART,
-            PARTROLLE,
-            SAK,
-            SAKSSTATUS,
-            SKJERMINGSHJEMMEL,
-            TILGANG,
-            TILGANGSRESTRIKSJON,
-            TILKNYTTETREGISTRERINGSOM,
-            VARIANTFORMAT,
-            ADMIN
-    };
 }
