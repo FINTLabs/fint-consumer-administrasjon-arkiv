@@ -59,7 +59,7 @@ spec:
             - {name: spring.mvc.logResolvedException,  value: 'false'}
             - {name: endpoints.sensitive, value: 'false'}
             - {name: management.security.enabled, value: 'false'}
-          image: fintlabs.azurecr.io/consumer-administrasjon-arkiv:build.48
+          image: fintlabsacr.azurecr.io/consumer-administrasjon-arkiv:build.48
           name: consumer-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
@@ -108,7 +108,7 @@ spec:
             - {name: spring.mvc.logResolvedException,  value: 'false'}
             - {name: endpoints.sensitive, value: 'false'}
             - {name: management.security.enabled, value: 'false'}
-          image: fintlabs.azurecr.io/provider:2.2.0
+          image: fintlabsacr.azurecr.io/provider:2.2.0
           name: provider-administrasjon-arkiv
           ports:
             - {containerPort: 8080}
