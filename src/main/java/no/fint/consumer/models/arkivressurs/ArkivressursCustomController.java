@@ -1,6 +1,5 @@
 package no.fint.consumer.models.arkivressurs;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import no.fint.audit.FintAuditService;
 import no.fint.consumer.config.Constants;
@@ -13,25 +12,18 @@ import no.fint.event.model.Operation;
 import no.fint.model.administrasjon.arkiv.ArkivActions;
 import no.fint.relations.FintRelationsMediaType;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
-
-import java.net.URI;
 
 @Slf4j
-@CrossOrigin
 @RestController
-@RequestMapping(name = "Arkivressurs", value = RestEndpoints.ARKIVRESSURS, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
+@CrossOrigin
+@RequestMapping(name = "Arkivressurs", path = RestEndpoints.ARKIVRESSURS, produces = {FintRelationsMediaType.APPLICATION_HAL_JSON_VALUE, MediaType.APPLICATION_JSON_UTF8_VALUE})
 public class ArkivressursCustomController {
 
     @Autowired
     private FintAuditService fintAuditService;
-
-    @Autowired
-    private ArkivressursLinker linker;
 
     @Autowired
     private StatusCache statusCache;
@@ -55,12 +47,11 @@ public class ArkivressursCustomController {
 
         statusCache.put(event.getCorrId(), event);
 
-        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
-        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/systemid/{id:.+}")
-    public ResponseEntity putArkivressursBySystemId(
+    public ResponseEntity deleteArkivressursBySystemId(
             @PathVariable String id,
             @RequestHeader(name = HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT) String client
@@ -75,8 +66,7 @@ public class ArkivressursCustomController {
 
         statusCache.put(event.getCorrId(), event);
 
-        URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
-        return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
+        return ResponseEntity.noContent().build();
     }
 
 }
