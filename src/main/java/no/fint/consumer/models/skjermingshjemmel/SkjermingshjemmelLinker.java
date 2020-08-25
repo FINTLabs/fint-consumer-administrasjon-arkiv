@@ -1,6 +1,5 @@
 package no.fint.consumer.models.skjermingshjemmel;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.SkjermingshjemmelResource;
 import no.fint.model.resource.administrasjon.arkiv.SkjermingshjemmelResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class SkjermingshjemmelLinker extends FintLinker<SkjermingshjemmelResourc
 
     @Override
     public SkjermingshjemmelResources toResources(Collection<SkjermingshjemmelResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public SkjermingshjemmelResources toResources(Stream<SkjermingshjemmelResource> stream, int offset, int size, int totalItems) {
         SkjermingshjemmelResources resources = new SkjermingshjemmelResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

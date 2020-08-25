@@ -1,6 +1,5 @@
 package no.fint.consumer.models.part;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.PartResource;
 import no.fint.model.resource.administrasjon.arkiv.PartResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class PartLinker extends FintLinker<PartResource> {
 
     @Override
     public PartResources toResources(Collection<PartResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public PartResources toResources(Stream<PartResource> stream, int offset, int size, int totalItems) {
         PartResources resources = new PartResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

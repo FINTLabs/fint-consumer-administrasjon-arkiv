@@ -1,6 +1,5 @@
 package no.fint.consumer.models.sak;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.SakResource;
 import no.fint.model.resource.administrasjon.arkiv.SakResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class SakLinker extends FintLinker<SakResource> {
 
     @Override
     public SakResources toResources(Collection<SakResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public SakResources toResources(Stream<SakResource> stream, int offset, int size, int totalItems) {
         SakResources resources = new SakResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 
