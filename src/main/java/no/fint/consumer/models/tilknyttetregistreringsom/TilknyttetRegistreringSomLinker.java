@@ -1,6 +1,5 @@
 package no.fint.consumer.models.tilknyttetregistreringsom;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.TilknyttetRegistreringSomResource;
 import no.fint.model.resource.administrasjon.arkiv.TilknyttetRegistreringSomResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class TilknyttetRegistreringSomLinker extends FintLinker<TilknyttetRegist
 
     @Override
     public TilknyttetRegistreringSomResources toResources(Collection<TilknyttetRegistreringSomResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public TilknyttetRegistreringSomResources toResources(Stream<TilknyttetRegistreringSomResource> stream, int offset, int size, int totalItems) {
         TilknyttetRegistreringSomResources resources = new TilknyttetRegistreringSomResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

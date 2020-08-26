@@ -31,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Slf4j
 @Api(tags = {"Dokumentfil"})
@@ -99,7 +101,10 @@ public class DokumentfilController {
     public DokumentfilResources getDokumentfil(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp) {
+            @RequestParam(defaultValue = "0") long sinceTimeStamp,
+            @RequestParam(defaultValue = "0") int size,
+            @RequestParam(defaultValue = "0") int offset,
+            HttpServletRequest request) {
         if (cacheService == null) {
             throw new CacheDisabledException("Dokumentfil cache is disabled.");
         }
@@ -113,19 +118,26 @@ public class DokumentfilController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_DOKUMENTFIL, client);
         event.setOperation(Operation.READ);
+        if (StringUtils.isNotBlank(request.getQueryString())) {
+            event.setQuery("?" + request.getQueryString());
+        }
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
-        List<DokumentfilResource> dokumentfil;
-        if (sinceTimeStamp == null) {
-            dokumentfil = cacheService.getAll(orgId);
+        Stream<DokumentfilResource> resources;
+        if (size > 0 && offset >= 0 && sinceTimeStamp > 0) {
+            resources = cacheService.streamSliceSince(orgId, sinceTimeStamp, offset, size);
+        } else if (size > 0 && offset >= 0) {
+            resources = cacheService.streamSlice(orgId, offset, size);
+        } else if (sinceTimeStamp > 0) {
+            resources = cacheService.streamSince(orgId, sinceTimeStamp);
         } else {
-            dokumentfil = cacheService.getAll(orgId, sinceTimeStamp);
+            resources = cacheService.streamAll(orgId);
         }
 
         fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-        return linker.toResources(dokumentfil);
+        return linker.toResources(resources, offset, size, cacheService.getCacheSize(orgId));
     }
 
 

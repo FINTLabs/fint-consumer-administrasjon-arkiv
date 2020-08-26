@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.common.collect.ImmutableMap;
 import io.swagger.annotations.Api;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import no.fint.audit.FintAuditService;
 
@@ -29,14 +30,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.UnknownHostException;
 import java.net.URI;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import no.fint.model.resource.administrasjon.arkiv.ArkivressursResource;
 import no.fint.model.resource.administrasjon.arkiv.ArkivressursResources;
@@ -86,7 +88,7 @@ public class ArkivressursController {
     }
 
     @GetMapping("/cache/size")
-     public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
+    public ImmutableMap<String, Integer> getCacheSize(@RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId) {
         if (cacheService == null) {
             throw new CacheDisabledException("Arkivressurs cache is disabled.");
         }
@@ -100,7 +102,10 @@ public class ArkivressursController {
     public ArkivressursResources getArkivressurs(
             @RequestHeader(name = HeaderConstants.ORG_ID, required = false) String orgId,
             @RequestHeader(name = HeaderConstants.CLIENT, required = false) String client,
-            @RequestParam(required = false) Long sinceTimeStamp) {
+            @RequestParam(defaultValue = "0") long sinceTimeStamp,
+            @RequestParam(defaultValue = "0") int size,
+            @RequestParam(defaultValue = "0") int offset,
+            HttpServletRequest request) {
         if (cacheService == null) {
             throw new CacheDisabledException("Arkivressurs cache is disabled.");
         }
@@ -114,19 +119,26 @@ public class ArkivressursController {
 
         Event event = new Event(orgId, Constants.COMPONENT, ArkivActions.GET_ALL_ARKIVRESSURS, client);
         event.setOperation(Operation.READ);
+        if (StringUtils.isNotBlank(request.getQueryString())) {
+            event.setQuery("?" + request.getQueryString());
+        }
         fintAuditService.audit(event);
         fintAuditService.audit(event, Status.CACHE);
 
-        List<ArkivressursResource> arkivressurs;
-        if (sinceTimeStamp == null) {
-            arkivressurs = cacheService.getAll(orgId);
+        Stream<ArkivressursResource> resources;
+        if (size > 0 && offset >= 0 && sinceTimeStamp > 0) {
+            resources = cacheService.streamSliceSince(orgId, sinceTimeStamp, offset, size);
+        } else if (size > 0 && offset >= 0) {
+            resources = cacheService.streamSlice(orgId, offset, size);
+        } else if (sinceTimeStamp > 0) {
+            resources = cacheService.streamSince(orgId, sinceTimeStamp);
         } else {
-            arkivressurs = cacheService.getAll(orgId, sinceTimeStamp);
+            resources = cacheService.streamAll(orgId);
         }
 
         fintAuditService.audit(event, Status.CACHE_RESPONSE, Status.SENT_TO_CLIENT);
 
-        return linker.toResources(arkivressurs);
+        return linker.toResources(resources, offset, size, cacheService.getCacheSize(orgId));
     }
 
 
@@ -227,44 +239,7 @@ public class ArkivressursController {
             @RequestHeader(HeaderConstants.ORG_ID) String orgId,
             @RequestHeader(HeaderConstants.CLIENT) String client) {
         log.debug("/status/{} for {} from {}", id, orgId, client);
-        if (!statusCache.containsKey(id)) {
-            return ResponseEntity.status(HttpStatus.GONE).build();
-        }
-        Event event = statusCache.get(id);
-        log.debug("Event: {}", event);
-        log.trace("Data: {}", event.getData());
-        if (!event.getOrgId().equals(orgId)) {
-            return ResponseEntity.badRequest().body(new EventResponse() { { setMessage("Invalid OrgId"); } } );
-        }
-        if (event.getResponseStatus() == null) {
-            return ResponseEntity.status(HttpStatus.ACCEPTED).build();
-        }
-        ArkivressursResource result;
-        switch (event.getResponseStatus()) {
-            case ACCEPTED:
-                if (event.getOperation() == Operation.VALIDATE) {
-                    fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                    return ResponseEntity.ok(event.getResponse());
-                }
-                result = objectMapper.convertValue(event.getData().get(0), ArkivressursResource.class);
-                URI location = UriComponentsBuilder.fromUriString(linker.getSelfHref(result)).build().toUri();
-                event.setMessage(location.toString());
-                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                if (props.isUseCreated())
-                    return ResponseEntity.created(location).body(linker.toResource(result));
-                return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).body(linker.toResource(result));
-            case ERROR:
-                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(event.getResponse());
-            case CONFLICT:
-                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                result = objectMapper.convertValue(event.getData().get(0), ArkivressursResource.class);
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(linker.toResource(result));
-            case REJECTED:
-                fintAuditService.audit(event, Status.SENT_TO_CLIENT);
-                return ResponseEntity.badRequest().body(event.getResponse());
-        }
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(event.getResponse());
+        return statusCache.handleStatusRequest(id, orgId, linker, ArkivressursResource.class);
     }
 
     @PostMapping

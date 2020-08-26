@@ -1,6 +1,5 @@
 package no.fint.consumer.models.merknadstype;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.MerknadstypeResource;
 import no.fint.model.resource.administrasjon.arkiv.MerknadstypeResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class MerknadstypeLinker extends FintLinker<MerknadstypeResource> {
 
     @Override
     public MerknadstypeResources toResources(Collection<MerknadstypeResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public MerknadstypeResources toResources(Stream<MerknadstypeResource> stream, int offset, int size, int totalItems) {
         MerknadstypeResources resources = new MerknadstypeResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

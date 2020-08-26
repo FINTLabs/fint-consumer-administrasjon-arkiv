@@ -1,6 +1,5 @@
 package no.fint.consumer.models.journalposttype;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.JournalpostTypeResource;
 import no.fint.model.resource.administrasjon.arkiv.JournalpostTypeResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class JournalpostTypeLinker extends FintLinker<JournalpostTypeResource> {
 
     @Override
     public JournalpostTypeResources toResources(Collection<JournalpostTypeResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public JournalpostTypeResources toResources(Stream<JournalpostTypeResource> stream, int offset, int size, int totalItems) {
         JournalpostTypeResources resources = new JournalpostTypeResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 
