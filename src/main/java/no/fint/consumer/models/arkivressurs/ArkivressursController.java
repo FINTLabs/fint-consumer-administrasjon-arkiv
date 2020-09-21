@@ -183,7 +183,7 @@ public class ArkivressursController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(arkivressurs);
-        }    
+        }
     }
 
     @GetMapping("/systemid/{id:.+}")
@@ -227,7 +227,7 @@ public class ArkivressursController {
             fintAuditService.audit(response, Status.SENT_TO_CLIENT);
 
             return linker.toResource(arkivressurs);
-        }    
+        }
     }
 
 
@@ -254,7 +254,7 @@ public class ArkivressursController {
         ArkivressursResource result;
         switch (event.getResponseStatus()) {
             case ACCEPTED:
-                if (event.getOperation() == Operation.VALIDATE) {
+                if (event.getOperation() == Operation.VALIDATE || event.getOperation() == Operation.DELETE) {
                     fintAuditService.audit(event, Status.SENT_TO_CLIENT);
                     return ResponseEntity.ok(event.getResponse());
                 }
@@ -300,7 +300,7 @@ public class ArkivressursController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
 
-  
+
     @PutMapping("/kildesystemid/{id:.+}")
     public ResponseEntity putArkivressursByKildesystemId(
             @PathVariable String id,
@@ -324,7 +324,7 @@ public class ArkivressursController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
     @PutMapping("/systemid/{id:.+}")
     public ResponseEntity putArkivressursBySystemId(
             @PathVariable String id,
@@ -348,7 +348,7 @@ public class ArkivressursController {
         URI location = UriComponentsBuilder.fromUriString(linker.self()).path("status/{id}").buildAndExpand(event.getCorrId()).toUri();
         return ResponseEntity.status(HttpStatus.ACCEPTED).location(location).build();
     }
-  
+
 
     //
     // Exception handlers

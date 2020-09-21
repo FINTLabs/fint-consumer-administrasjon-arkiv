@@ -3,6 +3,7 @@ package no.fint.consumer.config;
 import com.google.common.collect.ImmutableMap;
 import no.fint.consumer.utils.RestEndpoints;
 import no.fint.model.administrasjon.arkiv.*;
+import no.fint.model.administrasjon.organisasjon.Organisasjonselement;
 import no.fint.model.administrasjon.personal.Personalressurs;
 
 import java.util.Map;
@@ -36,6 +37,7 @@ public class LinkMapper {
                 .put(Variantformat.class.getName(), contextPath + RestEndpoints.VARIANTFORMAT)
                 /* .put(TODO,TODO) */
                 .put(Personalressurs.class.getName(), "/administrasjon/personal/personalressurs")
+                .put(Organisasjonselement.class.getName(), "/administrasjon/organisasjon/organisasjonselement")
                 .build();
     }
 
