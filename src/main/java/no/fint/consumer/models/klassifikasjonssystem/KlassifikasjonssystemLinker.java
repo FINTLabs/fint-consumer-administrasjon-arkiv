@@ -1,6 +1,5 @@
 package no.fint.consumer.models.klassifikasjonssystem;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.KlassifikasjonssystemResource;
 import no.fint.model.resource.administrasjon.arkiv.KlassifikasjonssystemResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class KlassifikasjonssystemLinker extends FintLinker<Klassifikasjonssyste
 
     @Override
     public KlassifikasjonssystemResources toResources(Collection<KlassifikasjonssystemResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public KlassifikasjonssystemResources toResources(Stream<KlassifikasjonssystemResource> stream, int offset, int size, int totalItems) {
         KlassifikasjonssystemResources resources = new KlassifikasjonssystemResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 

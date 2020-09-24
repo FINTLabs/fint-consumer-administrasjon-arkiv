@@ -1,6 +1,5 @@
 package no.fint.consumer.models.saksstatus;
 
-import no.fint.model.resource.Link;
 import no.fint.model.resource.administrasjon.arkiv.SaksstatusResource;
 import no.fint.model.resource.administrasjon.arkiv.SaksstatusResources;
 import no.fint.relations.FintLinker;
@@ -26,9 +25,14 @@ public class SaksstatusLinker extends FintLinker<SaksstatusResource> {
 
     @Override
     public SaksstatusResources toResources(Collection<SaksstatusResource> collection) {
+        return toResources(collection.stream(), 0, 0, collection.size());
+    }
+
+    @Override
+    public SaksstatusResources toResources(Stream<SaksstatusResource> stream, int offset, int size, int totalItems) {
         SaksstatusResources resources = new SaksstatusResources();
-        collection.stream().map(this::toResource).forEach(resources::addResource);
-        resources.addSelf(Link.with(self()));
+        stream.map(this::toResource).forEach(resources::addResource);
+        addPagination(resources, offset, size, totalItems);
         return resources;
     }
 
